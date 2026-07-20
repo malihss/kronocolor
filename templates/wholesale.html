@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Grossiste{% endblock %}
+{% block content %}
+<div style="padding-top:30px; max-width:640px; margin:0 auto;">
+  <div class="eyebrow">ESPACE GROSSISTE</div>
+  <h2 style="font-size:1.6rem; margin-bottom:8px;">Commandes en grande quantité</h2>
+  <p style="font-size:0.85rem; opacity:0.7; margin-bottom:20px;">Demandez un devis, ou payez et commandez directement.</p>
+
+  <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="text" name="company" placeholder="Société" required>
+    <input type="text" name="contact" placeholder="Contact" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <select name="product_id" id="product_id" onchange="updateEstimate()">
+      {% for p in products %}
+      <option value="{{ p.id }}" data-price="{{ p.wholesale_price }}" data-min="{{ p.min_wholesale }}" data-unit="{{ p.unit }}">
+        {{ p.name }} — min {{ p.min_wholesale }}{{ p.unit }}
+      </option>
+      {% endfor %}
+    </select>
+    <label>Quantité</label>
+    <input type="number" name="qty" id="qty" value="25" onchange="updateEstimate()">
+
+    <div class="card" style="background:var(--ink); margin:12px 0;">
+      <div style="font-family:Georgia,serif; font-style:italic; margin-bottom:8px;">Estimation</div>
+      <div style="display:flex; justify-content:space-between; font-size:0.82rem; opacity:0.75;"><span>Prix grossiste</span><span id="est-price">-</span></div>
+      <div style="display:flex; justify-content:space-between; font-size:0.82rem; opacity:0.75;"><span>Quantité</span><span id="est-qty">-</span></div>
+      <div style="display:flex; justify-content:space-between; font-size:0.95rem; color:var(--gold); margin-top:6px;"><span>Total</span><span id="est-total">-</span></div>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button type="submit" name="action" value="quote" class="btn btn-outline" style="flex:1; justify-content:center;">Demander un devis</button>
+      <button type="submit" name="action" value="pay" class="btn btn-oxide" style="flex:1; justify-content:center;">🛒 Payer &amp; commander</button>
+    </div>
+  </form>
+</div>
+
+<script>
+function updateEstimate() {
+  const sel = document.getElementById('product_id');
+  const opt = sel.options[sel.selectedIndex];
+  const price = parseFloat(opt.dataset.price);
+  const unit = opt.dataset.unit;
+  const qty = parseInt(document.getElementById('qty').value || 0);
+  document.getElementById('est-price').textContent = price + ' MAD/' + unit;
+  document.getElementById('est-qty').textContent = qty + ' ' + unit;
+  document.getElementById('est-total').textContent = Math.round(price * qty) + ' MAD';
+}
+updateEstimate();
+</script>
+{% endblock %}

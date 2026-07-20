@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Consultant{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <div class="eyebrow">ESPACE CONSULTANT</div>
+  <h2 style="font-size:1.6rem; margin-bottom:8px;">Suivi &amp; conseil client</h2>
+  <p style="font-size:0.85rem; opacity:0.7; margin-bottom:24px;">Consultez l'historique d'achat de chaque client et laissez-lui un retour.</p>
+
+  <div class="grid-3" style="grid-template-columns: 1fr 2fr;">
+    <div>
+      {% if not clients %}
+      <p style="font-size:0.85rem; opacity:0.5;">Aucun client n'a encore commandé.</p>
+      {% endif %}
+      {% for c in clients %}
+      <a href="{{ url_for('consultant_client', key=c.key) }}" class="card" style="display:block; margin-bottom:8px; {{ 'border-color:var(--gold);' if selected and selected.key == c.key }}">
+        <div style="font-size:0.85rem;">👤 {{ c.name }}</div>
+        <div style="font-size:0.72rem; opacity:0.5; margin-top:4px;">{{ c.orders|length }} commande(s) · {{ c.total|round|int }} MAD</div>
+        {% if c.city %}<div style="font-size:0.7rem; opacity:0.4;">{{ c.city }}</div>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+
+    <div>
+      {% if not selected %}
+      <div class="card" style="opacity:0.5; font-size:0.85rem;">Sélectionnez un client pour voir ce qu'il a acheté.</div>
+      {% else %}
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-family:Georgia,serif; font-style:italic; font-size:1.1rem; margin-bottom:6px;">{{ selected.name }}</div>
+        <div style="font-size:0.75rem; opacity:0.6; margin-bottom:12px;">{{ selected.phone or '' }} {{ '· ' ~ selected.city if selected.city }}</div>
+        {% for o in selected.orders %}
+        <div style="font-size:0.75rem; border:1px solid var(--line); border-radius:3px; padding:8px; margin-bottom:6px;">
+          <div style="display:flex; justify-content:space-between; opacity:0.7;">
+            <span style="font-family:monospace; color:var(--gold);">{{ o.id }}</span><span>{{ o.created_at[:10] }}</span>
+          </div>
+          <div style="margin-top:4px; opacity:0.8;">
+            {% for it in o['items'] %}{{ it.name }} ×{{ it.qty }}{{ ", " if not loop.last }}{% endfor %}
+          </div>
+          <div style="margin-top:4px; opacity:0.5;">Statut : {{ o.status }} · {{ o.total|round|int }} MAD</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="card">
+        <div style="font-size:0.85rem; opacity:0.7; margin-bottom:10px;">Notes &amp; conseils envoyés</div>
+        {% if not feedback %}
+        <p style="font-size:0.75rem; opacity:0.4;">Aucune note pour le moment.</p>
+        {% endif %}
+        {% for f in feedback %}
+        <div style="font-size:0.75rem; background:var(--ink); padding:8px; border-radius:3px; margin-bottom:6px;">
+          <div style="opacity:0.85;">{{ f.text }}</div>
+          <div style="opacity:0.4; margin-top:4px;">{{ f.created_at[:16].replace('T',' ') }}</div>
+        </div>
+        {% endfor %}
+        <form method="post" action="{{ url_for('consultant_feedback', key=selected.key) }}" style="display:flex; gap:8px; margin-top:10px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" name="text" placeholder="Ex : essayez une finition satinée vu l'humidité…" style="margin-bottom:0;" required>
+          <button type="submit" class="btn btn-oxide">➤</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Paiement{% endblock %}
+{% block content %}
+<div style="padding-top:30px; max-width:520px; margin:0 auto;">
+  <div class="eyebrow">PAIEMENT SÉCURISÉ</div>
+  <h2 style="font-size:1.5rem; margin-bottom:8px;">Finaliser le paiement</h2>
+  <p style="font-size:0.8rem; opacity:0.6; margin-bottom:20px;">
+    Commande <strong style="color:var(--gold); font-family:monospace;">{{ order_id }}</strong> —
+    paiement traité par Stripe (mode test), directement sur cette page. Carte de test :
+    <code>4242 4242 4242 4242</code>, toute date future, tout CVC.
+  </p>
+
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div id="checkout"></div>
+  </div>
+
+  <a href="{{ url_for('stripe_checkout_cancel') }}" class="hero-text-link" style="display:inline-block; margin-top:16px; font-size:0.8rem;">← Annuler et revenir au panier</a>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  (async function () {
+    const stripe = Stripe("{{ stripe_publishable_key }}");
+    const checkout = await stripe.initEmbeddedCheckout({
+      clientSecret: "{{ client_secret }}",
+    });
+    checkout.mount("#checkout");
+  })();
+</script>
+{% endblock %}

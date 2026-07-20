@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% from "_product_tile.html" import product_tile %}
+{% block title %}KRONOCOLOR — Accueil{% endblock %}
+{% block content %}
+<div class="split bleed">
+  <div class="split-pane">
+    <h1 class="hero-stack">
+      <span class="hero-stack-line hero-stack-dark">{{ t('home_hero_line1') }}</span>
+      <span class="hero-stack-line hero-stack-accent">{{ t('home_hero_line2') }}</span>
+      <span class="hero-stack-line hero-stack-muted">{{ t('home_hero_line3') }}</span>
+    </h1>
+    <div style="margin-top:28px; display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
+      <a href="{{ url_for('shop') }}" class="btn btn-gold">{{ t('home_cta_shop') }}</a>
+      <a href="{{ url_for('quiz') }}" class="hero-text-link">{{ t('home_cta_quiz') }}</a>
+    </div>
+  </div>
+
+  <div class="split-image">
+    <div class="split-image-photo" style="background-image:url('{{ url_for('static', filename='images/hero-peinture.jpg') }}');"></div>
+    {% if best_sellers %}
+    <div class="floating-card">
+      <div class="floating-card-eyebrow">{{ t('home_bestseller_eyebrow') }}</div>
+      <div class="floating-card-swatch" style="background:{% if best_sellers[0].image %}url('/static/{{ best_sellers[0].image }}') center/cover{% else %}{{ best_sellers[0].hex }}{% endif %};"></div>
+      <div class="floating-card-name">{{ best_sellers[0].name }}</div>
+      <div class="floating-card-price">{{ best_sellers[0].price|money }}/{{ best_sellers[0].unit }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if testimonials %}
+<div class="home-section testimonials-section">
+  <div class="eyebrow">ILS NOUS FONT CONFIANCE</div>
+  <h2 style="font-size:1.7rem; margin-bottom:28px;">Ce que disent nos clients</h2>
+  <div class="grid-3">
+    {% for r in testimonials[:3] %}
+    <div class="testimonial-card">
+      <div class="testimonial-stars">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</div>
+      <p class="testimonial-quote">“{{ r.message }}”</p>
+      <div class="testimonial-footer">
+        <span class="testimonial-swatch" style="background:{{ r.product_hex }};"></span>
+        <div>
+          <div class="testimonial-author">{{ r.author }}</div>
+          <div class="testimonial-product">{{ r.product_name }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="home-section">
+  <div class="home-section-head">
+    <div>
+      <div class="eyebrow">{{ t('home_catalog_eyebrow') }}</div>
+      <h2 style="font-size:1.7rem;">{{ t('home_catalog_title') }}</h2>
+    </div>
+    <a href="{{ url_for('shop') }}" class="category-link">{{ t('home_view_all_shop') }}</a>
+  </div>
+  <div class="grid-3">
+    {% for cat in NAV_CATEGORIES %}
+    {% set rep = products|selectattr('category', 'equalto', cat)|first %}
+    {% if rep %}
+    <a href="{{ url_for('shop', cat=cat) }}" class="category-tile" style="background:{% if rep.image %}url('/static/{{ rep.image }}') center/cover{% else %}{{ rep.hex }}{% endif %};">
+      <span class="category-tile-label">{{ cat }}</span>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<div class="home-section home-section-border">
+  <div class="eyebrow">{{ t('home_tools_eyebrow') }}</div>
+  <h2 style="font-size:1.7rem; margin-bottom:28px;">{{ t('home_tools_title') }}</h2>
+  <div class="grid-2">
+    <div class="feature-block">
+      <div class="feature-icon">🎨</div>
+      <h3 class="feature-title">{{ t('home_quiz_title') }}</h3>
+      <p class="feature-text">{{ t('home_quiz_text') }}</p>
+      <a href="{{ url_for('quiz') }}" class="hero-text-link" style="margin-top:14px; display:inline-block;">{{ t('home_try') }}</a>
+    </div>
+    <div class="feature-block">
+      <div class="feature-icon">🧪</div>
+      <h3 class="feature-title">{{ t('home_diag_title') }}</h3>
+      <p class="feature-text">{{ t('home_diag_text') }}</p>
+      <a href="{{ url_for('diagnostic') }}" class="hero-text-link" style="margin-top:14px; display:inline-block;">{{ t('home_try') }}</a>
+    </div>
+  </div>
+</div>
+
+<div class="home-section home-section-border">
+  <div class="home-section-head">
+    <div>
+      <div class="eyebrow">{{ t('home_bestsellers_eyebrow') }}</div>
+      <h2 style="font-size:1.7rem;">{{ t('home_bestsellers_title') }}</h2>
+    </div>
+    <a href="{{ url_for('shop') }}" class="category-link">{{ t('home_view_all_shop') }}</a>
+  </div>
+  <div class="tile-grid">
+    {% for p in best_sellers %}
+    {{ product_tile(p, favorites, compare) }}
+    {% endfor %}
+  </div>
+</div>
+
+<div class="home-section home-section-border">
+  <div class="eyebrow">{{ t('home_why_eyebrow') }}</div>
+  <h2 style="font-size:1.7rem; margin-bottom:28px;">{{ t('home_why_title') }}</h2>
+  <div class="grid-3">
+    <div class="feature-block">
+      <div class="feature-icon">🏛️</div>
+      <h3 class="feature-title">{{ t('home_why1_title') }}</h3>
+      <p class="feature-text">{{ t('home_why1_text') }}</p>
+    </div>
+    <div class="feature-block">
+      <div class="feature-icon">🎨</div>
+      <h3 class="feature-title">{{ t('home_why2_title') }}</h3>
+      <p class="feature-text">{{ t('home_why2_text') }}</p>
+    </div>
+    <div class="feature-block">
+      <div class="feature-icon">🚚</div>
+      <h3 class="feature-title">{{ t('home_why3_title') }}</h3>
+      <p class="feature-text">{{ t('home_why3_text') }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="bleed stats-banner">
+  <div class="stats-banner-inner">
+    <div><div class="stats-banner-num">180+</div><div class="stats-banner-label">{{ t('stat_shades') }}</div></div>
+    <div><div class="stats-banner-num">25+</div><div class="stats-banner-label">{{ t('stat_finishes') }}</div></div>
+    <div><div class="stats-banner-num">6 ans</div><div class="stats-banner-label">{{ t('stat_experience') }}</div></div>
+    <div><div class="stats-banner-num">4.9★</div><div class="stats-banner-label">{{ t('stat_satisfaction') }}</div></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+Flask>=3.0
+Flask-WTF>=1.2
+anthropic>=0.34
+scikit-learn>=1.4
+gunicorn>=22.0
+fpdf2>=2.8
+stripe>=10.0

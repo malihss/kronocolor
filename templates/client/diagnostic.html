@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Diagnostic IA{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <div class="eyebrow">DIAGNOSTIC</div>
+  <h2 style="font-size:1.7rem; margin-bottom:8px;">Mélange visuel &amp; recommandation</h2>
+  <p style="opacity:0.7; font-size:0.85rem; margin-bottom:24px;">Composez votre mélange de pigments, précisez la surface et le climat. Un modèle de Machine Learning (scikit-learn, local) donne une recommandation instantanée, et Claude fournit une explication technique détaillée.</p>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="grid-2">
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div style="font-size:0.85rem; opacity:0.7; margin-bottom:12px;">Mélange de pigments (%)</div>
+          {% for p in pigments %}
+          {% set pct0 = (mix_selection | selectattr('name','equalto',p.name) | map(attribute='pct') | first) or 0 %}
+          <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+              <span><span class="swatch" style="display:inline-block; width:10px; height:10px; background:{{ p.hex }}; margin-right:6px;"></span>{{ p.name }}</span>
+              <span class="mix-pct-value" data-pct-for="pct_{{ p.id }}">{{ pct0 }}%</span>
+            </div>
+            <input type="range" name="pct_{{ p.id }}" class="mix-slider" data-hex="{{ p.hex }}"
+                   min="0" max="100" value="{{ pct0 }}"
+                   oninput="updateMixPreview()" style="width:100%; margin-bottom:0;">
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="card">
+          <div style="font-size:0.85rem; opacity:0.7; margin-bottom:12px;">Surface &amp; conditions</div>
+          <select name="surface">
+            {% for s in surfaces %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+          <select name="climate">
+            {% for c in climates %}<option value="{{ c.id }}">{{ c.label }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="btn btn-oxide" style="width:100%; justify-content:center; margin-top:8px;">🔬 Analyser</button>
+        </div>
+      </div>
+
+      <div>
+        <div id="mix-preview" style="height:160px; border-radius:8px; border:1px solid var(--line); background:{{ result_color or '#ffffff' }}; display:flex; align-items:center; justify-content:center; margin-bottom:16px; transition:background 0.1s;">
+          <span id="mix-preview-label" style="background:rgba(0,0,0,0.35); color:#fff; font-family:monospace; font-size:0.75rem; padding:4px 8px; border-radius:3px; {{ '' if result_color else 'display:none;' }}">{{ result_color or '' }}</span>
+          <span id="mix-preview-empty" style="opacity:0.4; font-size:0.85rem; {{ 'display:none;' if result_color else '' }}">Bougez les curseurs pour composer votre mélange</span>
+        </div>
+
+        {% if result_color %}
+        <form method="post" action="{{ url_for('add_diagnostic_sample') }}" style="margin-bottom:16px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="hex_color" value="{{ result_color }}">
+          <button type="submit" class="btn btn-outline" style="width:100%; justify-content:center; font-size:0.78rem;">
+            🧪 Commander un échantillon 50ml de ce mélange — {{ sample_price|money }}
+          </button>
+        </form>
+        {% endif %}
+
+        {% if ml_prediction %}
+        <div class="card" style="margin-bottom:16px;">
+          <div style="font-size:0.72rem; font-family:monospace; color:var(--gold); letter-spacing:0.1em; margin-bottom:10px;">
+            PRÉDICTION MACHINE LEARNING (local, instantané)
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+            <span>Finition</span><strong>{{ ml_prediction.finish }}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+            <span>Liant recommandé</span><strong>{{ ml_prediction.binder }}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+            <span>Confiance du modèle</span><strong>{{ ml_prediction.confidence }}%</strong>
+          </div>
+          <div class="bar-track" style="margin-top:8px;">
+            <div class="bar-fill" style="width:{{ ml_prediction.confidence }}%;"></div>
+          </div>
+          {% if ml_prediction.alternative %}
+          <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:0.78rem; opacity:0.7;">
+            Alternative possible : <strong>{{ ml_prediction.alternative.finish }}</strong> /
+            <strong>{{ ml_prediction.alternative.binder }}</strong>
+            ({{ ml_prediction.alternative.confidence }}% de confiance)
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="card" style="min-height:140px;">
+          <div style="font-size:0.72rem; font-family:monospace; color:var(--gold); letter-spacing:0.1em; margin-bottom:10px;">
+            ANALYSE DÉTAILLÉE (Claude IA)
+          </div>
+          {% if ai_text %}
+            <div style="font-size:0.85rem; white-space:pre-line; opacity:0.9; line-height:1.6;">{{ ai_text }}</div>
+          {% elif error %}
+            <div style="font-size:0.82rem; color:var(--oxide);">{{ error }}</div>
+          {% else %}
+            <div style="font-size:0.85rem; opacity:0.4;">La recommandation détaillée s'affichera ici après analyse.</div>
+          {% endif %}
+        </div>
+
+        {% if similar_products %}
+        <div class="card" style="margin-top:16px;">
+          <div style="font-size:0.72rem; font-family:monospace; color:var(--gold); letter-spacing:0.1em; margin-bottom:12px;">
+            TEINTES PROCHES DANS NOTRE CATALOGUE
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            {% for p in similar_products %}
+            <a href="{{ url_for('product_detail', pid=p.id) }}" style="display:flex; align-items:center; gap:12px;">
+              <span style="width:36px; height:36px; border-radius:50%; flex-shrink:0; border:1px solid var(--line); background:{{ p.hex }};"></span>
+              <span style="flex:1; min-width:0;">
+                <span style="display:block; font-size:0.85rem; font-weight:500;">{{ p.name }}</span>
+                <span style="display:block; font-size:0.72rem; opacity:0.55;">{{ p.category }} · {{ p.price|money }}/{{ p.unit }}</span>
+              </span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+function updateMixPreview() {
+  var sliders = document.querySelectorAll('.mix-slider');
+  var total = 0;
+  var r = 0, g = 0, b = 0;
+  sliders.forEach(function (input) {
+    var pct = parseInt(input.value, 10) || 0;
+    var label = document.querySelector('[data-pct-for="' + input.name + '"]');
+    if (label) label.textContent = pct + '%';
+    if (pct > 0) {
+      var hex = input.dataset.hex.replace('#', '');
+      var rr = parseInt(hex.substring(0, 2), 16);
+      var gg = parseInt(hex.substring(2, 4), 16);
+      var bb = parseInt(hex.substring(4, 6), 16);
+      r += rr * pct;
+      g += gg * pct;
+      b += bb * pct;
+      total += pct;
+    }
+  });
+
+  var preview = document.getElementById('mix-preview');
+  var label = document.getElementById('mix-preview-label');
+  var empty = document.getElementById('mix-preview-empty');
+
+  if (total > 0) {
+    var mixHex = '#' + [r / total, g / total, b / total]
+      .map(function (v) { return Math.round(v).toString(16).padStart(2, '0'); })
+      .join('');
+    preview.style.background = mixHex;
+    label.textContent = mixHex;
+    label.style.display = '';
+    empty.style.display = 'none';
+  } else {
+    preview.style.background = '#ffffff';
+    label.style.display = 'none';
+    empty.style.display = '';
+  }
+}
+updateMixPreview();
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Créer un compte{% endblock %}
+{% block content %}
+<div class="split bleed">
+  <div class="split-pane">
+    <div class="login-box">
+      <div style="margin-bottom: 30px;">
+        <div class="brand" style="font-size:1.5rem;">KRONOCOLOR</div>
+        <div class="eyebrow" style="margin-top:6px;">{{ t('register_eyebrow') }}</div>
+      </div>
+
+      <form method="post" id="register-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="role-tabs" id="role-grid">
+          {% for r in roles %}
+          <div class="role-tab {{ 'selected' if loop.first }}" data-role="{{ r.id }}" data-needs-code="{{ 'true' if r.needs_code else 'false' }}" onclick="selectRole('{{ r.id }}')">
+            {{ t('role_' + r.id) }}
+          </div>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="role" id="role-input" value="{{ roles[0].id }}">
+
+        <h2 style="font-size:1.6rem; margin-bottom:4px;">{{ t('register_title') }}</h2>
+        <p style="font-size:0.85rem; opacity:0.6; margin-bottom:20px;">{{ t('register_sub') }}</p>
+
+        <input type="text" name="name" placeholder="{{ t('name_placeholder') }}" required>
+        <input type="email" name="email" placeholder="{{ t('email_placeholder') }}" required>
+        <input type="password" name="password" placeholder="{{ t('register_password_placeholder') }}" required minlength="6">
+        <input type="password" name="confirm" placeholder="{{ t('register_confirm_placeholder') }}" required minlength="6">
+        <div id="code-field" style="display:none;">
+          <input type="password" name="code" placeholder="{{ t('register_code_placeholder') }}">
+        </div>
+        <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center;">{{ t('register_submit') }}</button>
+        <p id="code-hint" style="font-size:0.72rem; opacity:0.5; margin-top:8px; display:none;">
+          {{ t('register_code_hint') }}
+        </p>
+      </form>
+
+      <p style="font-size:0.82rem; opacity:0.65; margin-top:18px; text-align:center;">
+        {{ t('register_have_account') }} <a href="{{ url_for('login') }}" style="color:var(--gold); text-decoration:underline;">{{ t('login_submit') }}</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="split-image">
+    <div class="split-image-photo" style="background-image:url('{{ url_for('static', filename='images/hero-peinture.jpg') }}');"></div>
+  </div>
+</div>
+
+<script>
+function selectRole(role) {
+  document.querySelectorAll('.role-tab').forEach(el => el.classList.remove('selected'));
+  document.querySelector(`.role-tab[data-role="${role}"]`).classList.add('selected');
+  document.getElementById('role-input').value = role;
+  const needsCode = document.querySelector(`.role-tab[data-role="${role}"]`).dataset.needsCode === 'true';
+  document.getElementById('code-field').style.display = needsCode ? 'block' : 'none';
+  document.getElementById('code-hint').style.display = needsCode ? 'block' : 'none';
+}
+</script>
+{% endblock %}

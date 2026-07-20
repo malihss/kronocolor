@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Comparateur{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <div class="eyebrow">COMPARATEUR</div>
+  <h2 style="font-size:1.7rem; margin-bottom:24px;">Comparer vos teintes ({{ products|length }}/{{ compare_max }})</h2>
+
+  {% if not products %}
+  <div class="card" style="opacity:0.6; font-size:0.85rem;">
+    Aucun produit à comparer. Cliquez sur « + Comparer » sur une fiche produit ou dans la boutique
+    (jusqu'à {{ compare_max }} produits à la fois).
+  </div>
+  <a href="{{ url_for('shop') }}" class="btn btn-gold" style="margin-top:16px;">Découvrir la boutique →</a>
+  {% else %}
+  <div class="compare-table" style="overflow-x:auto;">
+    <div class="compare-columns" style="display:grid; grid-template-columns: 140px repeat({{ products|length }}, 1fr); gap:0; min-width:{{ 140 + products|length * 200 }}px;">
+      <div></div>
+      {% for p in products %}
+      <div style="padding:12px; text-align:center;">
+        <div class="swatch" style="width:100%; height:90px; border-radius:8px; margin-bottom:10px; background:{% if p.image %}url('/static/{{ p.image }}') center/cover{% else %}{{ p.hex }}{% endif %};"></div>
+        <div style="font-weight:500; font-size:0.85rem;">{{ p.name }}</div>
+        <form method="post" action="{{ url_for('toggle_compare', pid=p.id) }}" style="margin-top:8px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-outline" style="font-size:0.68rem; padding:4px 10px;">Retirer</button>
+        </form>
+      </div>
+      {% endfor %}
+
+      <div class="compare-row-label">Catégorie</div>
+      {% for p in products %}<div class="compare-cell">{{ p.category }}</div>{% endfor %}
+
+      <div class="compare-row-label">Prix</div>
+      {% for p in products %}<div class="compare-cell">{{ p.price|money }} / {{ p.unit }}</div>{% endfor %}
+
+      <div class="compare-row-label">Teinte</div>
+      {% for p in products %}
+      <div class="compare-cell" style="display:flex; align-items:center; justify-content:center; gap:6px;">
+        <span style="width:16px; height:16px; border-radius:50%; background:{{ p.hex }}; display:inline-block; border:1px solid var(--line);"></span>
+        {{ p.hex }} ({{ p.hex|color_family|capitalize }})
+      </div>
+      {% endfor %}
+
+      <div class="compare-row-label">Finition</div>
+      {% for p in products %}<div class="compare-cell">{{ p.finish or '—' }}</div>{% endfor %}
+
+      <div class="compare-row-label">Liant</div>
+      {% for p in products %}<div class="compare-cell">{{ p.binder or '—' }}</div>{% endfor %}
+
+      <div class="compare-row-label">Note clients</div>
+      {% for p in products %}
+      <div class="compare-cell">{% if p.rating_count %}★ {{ p.rating_avg }} ({{ p.rating_count }}){% else %}Aucun avis{% endif %}</div>
+      {% endfor %}
+
+      <div class="compare-row-label">Disponibilité</div>
+      {% for p in products %}
+      <div class="compare-cell">{% if p.stock == 0 %}Épuisé{% else %}{{ p.stock }} {{ p.unit }}{% endif %}</div>
+      {% endfor %}
+
+      <div class="compare-row-label"></div>
+      {% for p in products %}
+      <div class="compare-cell">
+        <form method="post" action="{{ url_for('cart_add', pid=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-gold" style="font-size:0.72rem; padding:6px 12px;" {{ 'disabled' if p.stock == 0 }}>Ajouter au panier</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Panier{% endblock %}
+{% block content %}
+<div class="shop-layout">
+  <div>
+    <div class="eyebrow">{{ t('cart_eyebrow') }}</div>
+    <h2 style="font-size:1.9rem; margin-bottom:24px;">{{ t('cart_title') }}</h2>
+
+    {% if not cart and not samples %}
+    <div class="card" style="text-align:center; padding:60px 30px;">
+      <p style="opacity:0.6; font-size:0.9rem; margin-bottom:18px;">{{ t('cart_empty') }}</p>
+      <a href="{{ url_for('shop') }}" class="btn btn-gold">{{ t('home_cta_shop') }}</a>
+    </div>
+    {% else %}
+    {% if samples %}
+    <div style="font-size:0.85rem; opacity:0.7; margin-bottom:10px;">🧪 Échantillons (50ml)</div>
+    <div class="cart-page-list" style="margin-bottom:24px;">
+      {% for s in samples %}
+      <div class="cart-page-line">
+        <div class="swatch" style="width:80px;height:80px; background:{{ s.hex }};"></div>
+        <div style="flex:1; min-width:0;">
+          <div class="product-row-top">
+            <div>
+              <div class="product-name">{{ s.name }}</div>
+              <span class="pill pill-gold" style="margin-top:4px; display:inline-block;">Échantillon</span>
+            </div>
+            <form method="post" action="{{ url_for('remove_sample', sample_id=s.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="cart-remove-btn">{{ t('cart_remove') }}</button>
+            </form>
+          </div>
+          <div class="color-family-label">🎨 Couleur : {{ s.hex|color_family|capitalize }}</div>
+          <div class="cart-page-line-bottom">
+            <span style="font-size:0.75rem; opacity:0.55;">Quantité : 1 (taille d'essai)</span>
+            <div class="cart-page-line-price">
+              <span style="font-size:0.75rem; opacity:0.5;">{{ s.price|money }}/{{ s.unit }}</span>
+              <span class="cart-page-line-total">{{ s.price|money }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if cart %}
+    <div class="cart-page-list">
+      {% for c in cart %}
+      <div class="cart-page-line">
+        <div class="swatch" style="width:80px;height:80px; background:{% if c.image %}url('/static/{{ c.image }}') center/cover{% else %}{{ c.hex }}{% endif %};"></div>
+        <div style="flex:1; min-width:0;">
+          <div class="product-row-top">
+            <div>
+              <div class="product-name">{{ c.name }}</div>
+              <span class="pill pill-gold" style="margin-top:4px; display:inline-block;">{{ c.category }}</span>
+            </div>
+            <form method="post" action="{{ url_for('cart_remove', pid=c.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="cart-remove-btn">{{ t('cart_remove') }}</button>
+            </form>
+          </div>
+          <div class="product-sub">{{ c.sub }}</div>
+          <div class="color-family-label">🎨 Couleur : {{ c.hex|color_family|capitalize }}</div>
+          <div class="cart-page-line-bottom">
+            <form method="post" action="{{ url_for('cart_update', pid=c.id) }}" class="qty-stepper">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <span style="font-size:0.75rem; opacity:0.55;">{{ t('cart_quantity') }}</span>
+              <input type="number" name="qty" value="{{ c.qty }}" min="0" max="{{ c.stock }}">
+              <button type="submit" class="btn btn-outline" style="padding:6px 12px;">{{ t('cart_update') }}</button>
+            </form>
+            <div class="cart-page-line-price">
+              <span style="font-size:0.75rem; opacity:0.5;">{{ c.price|money }}/{{ c.unit }}</span>
+              <span class="cart-page-line-total">{{ (c.price * c.qty)|money }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <form method="post" action="{{ url_for('cart_clear') }}" style="margin-top:18px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" style="background:none; border:none; font-size:0.78rem; opacity:0.5; cursor:pointer;">{{ t('cart_clear') }}</button>
+    </form>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  {% if cart or samples %}
+  <aside class="cart-dock">
+    <div class="eyebrow">{{ t('cart_summary_eyebrow') }}</div>
+    <div class="card">
+      <div class="cart-total-row"><span>{{ t('cart_subtotal') }}</span><span>{{ subtotal|money }}</span></div>
+      <div style="font-size:0.72rem; opacity:0.5; margin-top:8px;">{{ t('cart_shipping_note') }}</div>
+      <a href="{{ url_for('checkout') }}" class="btn btn-oxide" style="width:100%; justify-content:center; margin-top:16px;">{{ t('cart_checkout') }}</a>
+      <a href="{{ url_for('shop') }}" style="display:block; text-align:center; font-size:0.78rem; opacity:0.55; margin-top:12px;">{{ t('cart_continue_shopping') }}</a>
+    </div>
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}

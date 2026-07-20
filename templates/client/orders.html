@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Mes commandes{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <div class="eyebrow">HISTORIQUE</div>
+  <h2 style="font-size:1.7rem; margin-bottom:24px;">Mes commandes</h2>
+
+  {% if not orders %}
+  <div class="card" style="opacity:0.6; font-size:0.85rem;">Vous n'avez pas encore de commande.</div>
+  {% else %}
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    {% for o in orders %}
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+        <span style="font-family:monospace; color:var(--gold);">{{ o.id }}</span>
+        <span style="opacity:0.6;">{{ o.created_at[:10] }}</span>
+      </div>
+      <div style="font-size:0.82rem; margin-top:6px; opacity:0.8;">
+        {% for it in o['items'] %}{{ it.name }} ×{{ it.qty }}{{ ", " if not loop.last }}{% endfor %}
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+        <div style="font-size:0.78rem; opacity:0.55;">Statut : {{ o.status }} · {{ o.total|money }}</div>
+        <a href="{{ url_for('order_invoice_pdf', order_id=o.id) }}" style="font-size:0.72rem; color:var(--gold);">⬇ Facture PDF</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

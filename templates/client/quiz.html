@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% from "_product_tile.html" import product_tile %}
+{% block title %}KRONOCOLOR — Quiz conseil{% endblock %}
+{% block content %}
+<div style="padding-top:30px; max-width:640px; margin:0 auto;">
+  <div class="eyebrow">ASSISTANT QCM</div>
+  <h2 style="font-size:1.6rem; margin-bottom:8px;">Quel genre de peinture vous faut-il ?</h2>
+  <p style="font-size:0.85rem; opacity:0.7; margin-bottom:24px;">Répondez à 5 questions, notre modèle de Machine Learning vous propose une recommandation instantanée.</p>
+
+  {% set surface_icons = {
+    'Mur extérieur': '🏠', 'Mur intérieur': '🖼️', 'Bois': '🪵', 'Métal': '🔩',
+    'Béton brut': '🧱', 'Carrosserie auto': '🚗', 'Plastique': '🧴', 'Plâtre': '🏛️'
+  } %}
+  {% set climate_icons = {'chaud_sec': '☀️', 'froid': '❄️', 'humide': '💧', 'vent': '🌬️'} %}
+
+  <form method="post" id="quiz-form" class="card quiz-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="quiz-progress"><div class="quiz-progress-fill" id="quiz-progress-fill"></div></div>
+
+    <div class="quiz-step active" data-step="1">
+      <div class="quiz-step-label">QUESTION 1 SUR 5</div>
+      <label style="font-size:1rem; opacity:0.85; margin-bottom:18px;">Sur quelle surface allez-vous peindre ?</label>
+      <div class="quiz-choice-grid">
+        {% for s in surfaces %}
+        <label class="quiz-choice {{ 'selected' if answers.surface == s }}">
+          <input type="radio" name="surface" value="{{ s }}" {{ 'checked' if answers.surface == s }} required>
+          <span class="quiz-choice-icon">{{ surface_icons.get(s, '🎨') }}</span>
+          <span class="quiz-choice-label">{{ s }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="quiz-step" data-step="2">
+      <div class="quiz-step-label">QUESTION 2 SUR 5</div>
+      <label style="font-size:1rem; opacity:0.85; margin-bottom:18px;">Comment décririez-vous le climat de l'endroit ?</label>
+      <div class="quiz-choice-grid">
+        {% for c in climates %}
+        <label class="quiz-choice {{ 'selected' if answers.climate == c.id }}">
+          <input type="radio" name="climate" value="{{ c.id }}" {{ 'checked' if answers.climate == c.id }} required>
+          <span class="quiz-choice-icon">{{ climate_icons.get(c.id, '🌡️') }}</span>
+          <span class="quiz-choice-label">{{ c.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <button type="button" class="quiz-back" onclick="quizGoTo(1)">← Précédent</button>
+    </div>
+
+    <div class="quiz-step" data-step="3">
+      <div class="quiz-step-label">QUESTION 3 SUR 5</div>
+      <label style="font-size:1rem; opacity:0.85; margin-bottom:18px;">Vous imaginez plutôt une teinte…</label>
+      <div class="quiz-choice-grid quiz-choice-grid-color">
+        {% for l in lightness_options %}
+        <label class="quiz-choice quiz-color-choice {{ 'selected' if answers.lightness == l.id }}">
+          <input type="radio" name="lightness" value="{{ l.id }}" {{ 'checked' if answers.lightness == l.id }} required>
+          <span class="quiz-color-swatch" style="background:{{ lightness_hex.get(l.id, '#9b7b5a') }};"></span>
+          <span class="quiz-choice-label">{{ l.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <button type="button" class="quiz-back" onclick="quizGoTo(2)">← Précédent</button>
+    </div>
+
+    <div class="quiz-step" data-step="4">
+      <div class="quiz-step-label">QUESTION 4 SUR 5</div>
+      <label style="font-size:1rem; opacity:0.85; margin-bottom:18px;">Quel budget par litre envisagez-vous ?</label>
+      <div class="quiz-choice-grid">
+        {% for b in budget_options %}
+        <label class="quiz-choice {{ 'selected' if answers.budget == b.id }}">
+          <input type="radio" name="budget" value="{{ b.id }}" {{ 'checked' if answers.budget == b.id }} required>
+          <span class="quiz-choice-icon">{{ b.icon }}</span>
+          <span class="quiz-choice-label">{{ b.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <button type="button" class="quiz-back" onclick="quizGoTo(3)">← Précédent</button>
+    </div>
+
+    <div class="quiz-step" data-step="5">
+      <div class="quiz-step-label">QUESTION 5 SUR 5</div>
+      <label style="font-size:1rem; opacity:0.85; margin-bottom:18px;">Quelle surface souhaitez-vous couvrir ?</label>
+      <div class="quiz-choice-grid">
+        {% for sz in surface_size_options %}
+        <label class="quiz-choice {{ 'selected' if answers.surface_size == sz.id }}">
+          <input type="radio" name="surface_size" value="{{ sz.id }}" {{ 'checked' if answers.surface_size == sz.id }} required>
+          <span class="quiz-choice-icon">{{ sz.icon }}</span>
+          <span class="quiz-choice-label">{{ sz.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <button type="button" class="quiz-back" onclick="quizGoTo(4)">← Précédent</button>
+      <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center; margin-top:16px;">🔍 Voir ma recommandation</button>
+    </div>
+  </form>
+
+  {% if result %}
+  <div class="card quiz-result" style="margin-top:20px;">
+    <div class="quiz-result-eyebrow">RECOMMANDATION MACHINE LEARNING</div>
+    <div class="quiz-result-swatch" style="background:{{ lightness_hex.get(answers.lightness, '#9b7b5a') }};"></div>
+    <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:6px;">
+      <span>Finition</span><strong>{{ result.finish }}</strong>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:6px;">
+      <span>Liant recommandé</span><strong>{{ result.binder }}</strong>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:6px;">
+      <span>Confiance du modèle</span><strong>{{ result.confidence }}%</strong>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+      <span>Quantité estimée</span><strong>{{ result.estimated_liters }} L</strong>
+    </div>
+    <div class="bar-track" style="margin-top:8px;">
+      <div class="bar-fill" style="width:{{ result.confidence }}%;"></div>
+    </div>
+    {% if result.alternative %}
+    <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:0.78rem; opacity:0.7;">
+      Alternative possible : <strong>{{ result.alternative.finish }}</strong> /
+      <strong>{{ result.alternative.binder }}</strong> ({{ result.alternative.confidence }}%)
+    </div>
+    {% endif %}
+    <a href="{{ url_for('diagnostic') }}" class="btn btn-gold" style="width:100%; justify-content:center; margin-top:16px;">🎨 Affiner en mélangeant les couleurs</a>
+  </div>
+
+  {% if suggestions %}
+  <div style="margin-top:32px;">
+    <div class="eyebrow">PRODUITS SUGGÉRÉS</div>
+    <div class="tile-grid" style="grid-template-columns: repeat(3, 1fr);">
+      {% for p in suggestions %}
+      {{ product_tile(p, favorites, compare) }}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  var totalSteps = 5;
+  var current = 1;
+  var form = document.getElementById('quiz-form');
+
+  function updateProgress() {
+    document.getElementById('quiz-progress-fill').style.width = (current / totalSteps * 100) + '%';
+  }
+
+  function goTo(step) {
+    current = step;
+    form.querySelectorAll('.quiz-step').forEach(function (el) {
+      el.classList.toggle('active', parseInt(el.dataset.step, 10) === step);
+    });
+    updateProgress();
+  }
+  window.quizGoTo = goTo;
+
+  form.querySelectorAll('.quiz-choice input[type="radio"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var step = input.closest('.quiz-step');
+      step.querySelectorAll('.quiz-choice').forEach(function (c) { c.classList.remove('selected'); });
+      input.closest('.quiz-choice').classList.add('selected');
+      var stepNum = parseInt(step.dataset.step, 10);
+      if (stepNum < totalSteps) {
+        setTimeout(function () { goTo(stepNum + 1); }, 220);
+      }
+    });
+  });
+
+  {% if answers %}
+  current = 5;
+  {% endif %}
+  goTo(current);
+})();
+</script>
+{% endblock %}

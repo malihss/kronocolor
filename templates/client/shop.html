@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% from "_product_tile.html" import product_tile %}
+{% block title %}KRONOCOLOR — Boutique{% endblock %}
+{% block content %}
+<div class="bleed">
+<div class="shop-wide" style="padding-top:30px;">
+  <div class="shop-breadcrumb">
+    <a href="{{ url_for('client_home') }}">{{ t('shop_breadcrumb_home') }}</a> <span>/</span>
+    <a href="{{ url_for('shop') }}">{{ t('shop_breadcrumb_shop') }}</a>
+    {% if active_category %}<span>/</span> <span>{{ active_category }}</span>{% endif %}
+  </div>
+
+  <div class="shop-main-head" style="margin-top:16px;">
+    <div>
+      <h2 style="font-size:2rem;">{{ active_category or t('shop_all_shades') }}</h2>
+      <div class="shop-count">{{ product_count }} produit{{ 's' if product_count != 1 }}{% if query %} · résultats pour « {{ query }} »{% endif %}</div>
+    </div>
+    <form method="get" action="{{ url_for('shop') }}" class="shop-sort-form" onchange="this.submit()">
+      {% if active_category %}<input type="hidden" name="cat" value="{{ active_category }}">{% endif %}
+      {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+      {% if price_range %}<input type="hidden" name="price_range" value="{{ price_range }}">{% endif %}
+      {% if color %}<input type="hidden" name="color" value="{{ color }}">{% endif %}
+      {% if in_stock_only %}<input type="hidden" name="in_stock" value="1">{% endif %}
+      <select name="sort">
+        <option value="" {{ 'selected' if not sort }}>{{ t('shop_sort_new') }}</option>
+        <option value="price_asc" {{ 'selected' if sort == 'price_asc' }}>{{ t('shop_sort_price_asc') }}</option>
+        <option value="price_desc" {{ 'selected' if sort == 'price_desc' }}>{{ t('shop_sort_price_desc') }}</option>
+      </select>
+    </form>
+  </div>
+
+  <div class="shop-layout-filters">
+    <aside class="shop-filters">
+      <div class="shop-filter-group">
+        <div class="shop-filter-title">{{ t('shop_filter_category') }}</div>
+        <a href="{{ url_for('shop') }}" class="shop-filter-link {{ 'active' if not active_category }}">{{ t('shop_all_categories') }}</a>
+        {% for c in categories %}
+        <a href="{{ url_for('shop', cat=c) }}" class="shop-filter-link {{ 'active' if active_category == c }}">{{ c }}</a>
+        {% endfor %}
+      </div>
+      <div class="shop-filter-group">
+        <div class="shop-filter-title">{{ t('shop_filter_price') }}</div>
+        <a href="{{ url_for('shop', cat=active_category, sort=sort or None, color=color or None, in_stock=1 if in_stock_only else None) }}" class="shop-filter-link {{ 'active' if not price_range }}">{{ t('shop_all_prices') }}</a>
+        <a href="{{ url_for('shop', cat=active_category, sort=sort or None, color=color or None, in_stock=1 if in_stock_only else None, price_range='under_200') }}" class="shop-filter-link {{ 'active' if price_range == 'under_200' }}">{{ t('shop_under_200') }}</a>
+        <a href="{{ url_for('shop', cat=active_category, sort=sort or None, color=color or None, in_stock=1 if in_stock_only else None, price_range='200_500') }}" class="shop-filter-link {{ 'active' if price_range == '200_500' }}">{{ t('shop_200_500') }}</a>
+        <a href="{{ url_for('shop', cat=active_category, sort=sort or None, color=color or None, in_stock=1 if in_stock_only else None, price_range='over_500') }}" class="shop-filter-link {{ 'active' if price_range == 'over_500' }}">{{ t('shop_over_500') }}</a>
+      </div>
+
+      <div class="shop-filter-group">
+        <div class="shop-filter-title">{{ t('shop_filter_color') }}</div>
+        <div class="shop-color-swatches">
+          <div class="shop-color-dot-wrap">
+            <a href="{{ url_for('shop', cat=active_category, sort=sort or None, price_range=price_range or None, in_stock=1 if in_stock_only else None) }}"
+               class="shop-color-dot shop-color-dot-all {{ 'active' if not color }}" title="{{ t('shop_all_colors') }}">×</a>
+            <div class="color-family-label">{{ t('shop_all_colors') }}</div>
+          </div>
+          {% for fam in color_families %}
+          <div class="shop-color-dot-wrap">
+            <a href="{{ url_for('shop', cat=active_category, sort=sort or None, price_range=price_range or None, in_stock=1 if in_stock_only else None, color=fam) }}"
+               class="shop-color-dot {{ 'active' if color == fam }}" style="background:{{ color_swatches[fam] }};" title="{{ fam|capitalize }}"></a>
+            <div class="color-family-label">{{ fam|capitalize }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="shop-filter-group">
+        <div class="shop-filter-title">{{ t('shop_filter_availability') }}</div>
+        <a href="{{ url_for('shop', cat=active_category, sort=sort or None, price_range=price_range or None, color=color or None) }}" class="shop-filter-link {{ 'active' if not in_stock_only }}">{{ t('shop_all_products') }}</a>
+        <a href="{{ url_for('shop', cat=active_category, sort=sort or None, price_range=price_range or None, color=color or None, in_stock=1) }}" class="shop-filter-link {{ 'active' if in_stock_only }}">{{ t('shop_in_stock_only') }}</a>
+      </div>
+    </aside>
+
+    <div class="shop-main">
+      {% if active_category %}
+        {% if products %}
+        <div class="tile-grid">
+          {% for p in products %}
+          {{ product_tile(p, favorites, compare) }}
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size:0.85rem; opacity:0.5;">{{ t('shop_no_products') }}</p>
+        {% endif %}
+      {% else %}
+        {% for cat in categories %}
+        {% set cat_products = products|selectattr('category', 'equalto', cat)|list %}
+        {% if cat_products %}
+        <section class="category-block">
+          <div class="category-head">
+            <h3>{{ cat }}</h3>
+            <a href="{{ url_for('shop', cat=cat) }}" class="category-link">{{ t('shop_view_all_cat') }}</a>
+          </div>
+          <div class="tile-grid">
+            {% for p in cat_products %}
+            {{ product_tile(p, favorites, compare) }}
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+        {% endfor %}
+        {% if not products %}
+        <p style="font-size:0.85rem; opacity:0.5;">{{ t('shop_no_products') }}</p>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  {% if compare %}
+  <div style="position:sticky; bottom:16px; margin-top:24px; display:flex; justify-content:center;">
+    <a href="{{ url_for('compare_view') }}" class="btn btn-oxide" style="box-shadow:0 8px 24px rgba(20,20,20,0.18);">
+      ⚖ Comparer ({{ compare|length }}/3)
+    </a>
+  </div>
+  {% endif %}
+
+  {% if recently_viewed %}
+  <div class="home-section home-section-border">
+    <div class="eyebrow">VU RÉCEMMENT</div>
+    <h2 style="font-size:1.4rem; margin-bottom:20px;">Vos dernières consultations</h2>
+    <div class="tile-grid">
+      {% for p in recently_viewed %}
+      {{ product_tile(p, favorites, compare) }}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% macro product_tile(p, favorites, compare=[]) %}
+<div class="product-tile">
+  <div class="product-tile-media" style="background:{% if p.image %}url('/static/{{ p.image }}') center/cover{% else %}{{ p.hex }}{% endif %};">
+    <a href="{{ url_for('product_detail', pid=p.id) }}" class="product-tile-media-link" aria-label="{{ p.name }}"></a>
+    {% if not p.image %}
+    <span class="product-tile-monogram">K</span>
+    {% endif %}
+    {% if p.old_price and p.old_price > p.price %}
+    <span class="pill pill-oxide product-tile-badge product-tile-badge-promo">-{{ (((p.old_price - p.price) / p.old_price) * 100) | round | int }}%</span>
+    {% elif p.stock < 80 %}
+    <span class="pill pill-oxide product-tile-badge">Stock limité</span>
+    {% else %}
+    <span class="pill pill-teal product-tile-badge">En stock</span>
+    {% endif %}
+    <form method="post" action="{{ url_for('toggle_favorite', pid=p.id) }}" class="product-tile-fav-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="product-tile-fav">{{ '❤️' if p.id in favorites else '🤍' }}</button>
+    </form>
+    <form method="post" action="{{ url_for('toggle_compare', pid=p.id) }}" class="product-tile-compare-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="product-tile-compare {{ 'active' if p.id in compare }}" title="Ajouter au comparateur">{{ '✓ Comparer' if p.id in compare else '+ Comparer' }}</button>
+    </form>
+    <form method="post" action="{{ url_for('cart_add', pid=p.id) }}" class="product-tile-add-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="product-tile-add" {{ 'disabled' if p.stock == 0 }}>{{ 'Épuisé' if p.stock == 0 else 'Ajouter au panier' }}</button>
+    </form>
+  </div>
+  <a href="{{ url_for('product_detail', pid=p.id) }}" class="product-tile-body-link">
+    <div class="product-tile-body">
+      <div class="product-tile-brand">{{ p.category }}</div>
+      <div class="product-tile-name">{{ p.name }}</div>
+      {% if p.rating_count %}
+      <div class="product-tile-rating">★ {{ p.rating_avg }} <span class="product-tile-rating-count">({{ p.rating_count }})</span></div>
+      {% else %}
+      <div class="product-tile-rating product-tile-rating-empty">Aucun avis</div>
+      {% endif %}
+      <div class="product-tile-sub">{{ p.sub }}</div>
+      <div class="color-family-label">🎨 Couleur : {{ p.hex|color_family|capitalize }}</div>
+      <div class="product-tile-price">
+        {% if p.old_price and p.old_price > p.price %}
+        <span class="product-tile-old-price">{{ p.old_price|money }}</span>
+        {% endif %}
+        {{ p.price|money }}<span style="opacity:0.5;">/{{ p.unit }}</span>
+      </div>
+    </div>
+  </a>
+</div>
+{% endmacro %}

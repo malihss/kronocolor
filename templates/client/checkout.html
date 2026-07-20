@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Paiement{% endblock %}
+{% block content %}
+<div style="padding-top:30px; max-width:480px; margin:0 auto;">
+  <div class="eyebrow">{{ t('checkout_eyebrow') }}</div>
+  <h2 style="font-size:1.5rem; margin-bottom:20px;">{{ t('checkout_title') }}</h2>
+
+  <div class="card" style="margin-bottom:16px;">
+    {% for i in items %}
+    <div class="cart-line">
+      <span>{{ i.name }} ×{{ i.qty }}</span><span>{{ (i.price * i.qty)|money }}</span>
+    </div>
+    {% endfor %}
+    <div class="cart-total-row"><span>{{ t('cart_subtotal') }}</span><span>{{ subtotal|money }}</span></div>
+    {% if promo %}
+    <div class="cart-total-row" style="color:var(--gold);">
+      <span>Code « {{ promo.code }} » (-{{ promo.percent_off|round|int }}%)</span><span>-{{ discount|money }}</span>
+    </div>
+    {% endif %}
+    {% if customs_fee %}
+    <div class="cart-total-row">
+      <span>{{ t('checkout_customs_label') }} ({{ customs.label }}, {{ (customs.rate * 100)|round|int }}%)</span><span>{{ customs_fee|money }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <form method="get" action="{{ url_for('checkout') }}" class="card" style="margin-bottom:16px;" onchange="this.submit()">
+    <label style="font-size:0.78rem;">{{ t('checkout_country_label') }}</label>
+    <select name="country">
+      {% for code, c in customs_rates.items() %}
+      <option value="{{ code }}" {{ 'selected' if country == code }}>{{ c.label }}{% if c.rate > 0 %} ({{ (c.rate*100)|round|int }}%){% endif %}</option>
+      {% endfor %}
+    </select>
+    <div style="font-size:0.72rem; opacity:0.5; margin-top:6px;">{{ t('checkout_country_note') }}</div>
+  </form>
+
+  <form method="post" action="{{ url_for('remove_promo' if promo else 'apply_promo') }}" class="card" style="margin-bottom:16px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if promo %}
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+        <span>{{ t('checkout_promo_applied_prefix') }} {{ promo.code }} {{ t('checkout_promo_applied_suffix') }}</span>
+        <button type="submit" class="btn btn-outline" style="padding:6px 12px; font-size:0.72rem;">{{ t('checkout_promo_remove') }}</button>
+      </div>
+    {% else %}
+      <label style="font-size:0.78rem;">{{ t('checkout_promo_label') }}</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" name="promo_code" placeholder="Ex : BIENVENUE10" style="flex:1;">
+        <button type="submit" class="btn btn-outline" style="padding:0 16px; white-space:nowrap;">{{ t('checkout_promo_apply') }}</button>
+      </div>
+    {% endif %}
+  </form>
+
+  <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="country" value="{{ country }}">
+    <input type="text" name="name" placeholder="{{ t('name_placeholder') }}" value="{{ user.name }}" required>
+    <input type="email" name="email" placeholder="{{ t('email_placeholder') }}" value="{{ user.email }}" required>
+    <input type="text" name="address" placeholder="{{ t('checkout_address_placeholder') }}" required>
+    <input type="text" name="city" placeholder="{{ t('checkout_city_placeholder') }}" required>
+    <input type="text" name="phone" placeholder="{{ t('checkout_phone_placeholder') }}">
+
+    <label>{{ t('checkout_zone_label') }}</label>
+    <div class="grid-3" style="margin-bottom:14px;">
+      {% for z in zones %}
+      <label style="border:1px solid var(--line); border-radius:3px; padding:8px; cursor:pointer; font-size:0.75rem; margin-bottom:0;">
+        <input type="radio" name="zone" value="{{ z.id }}" {{ 'checked' if loop.first }} style="width:auto; margin-right:6px;">
+        {{ z.label }}<br><span style="opacity:0.5;">{{ z.days }} · {{ z.fee|money }}</span>
+      </label>
+      {% endfor %}
+    </div>
+
+    {% if stripe_enabled %}
+    <div style="font-size:0.75rem; opacity:0.7; margin-bottom:10px;">
+      💳 Paiement par carte réel via Stripe (mode test) — carte de test :
+      <code>4242 4242 4242 4242</code>, toute date future, tout CVC. Aucun vrai débit n'a lieu.
+      PayPal reste simulé.
+    </div>
+    {% else %}
+    <div style="font-size:0.75rem; opacity:0.6; margin-bottom:10px;">{{ t('checkout_payment_note') }}</div>
+    {% endif %}
+    <label>{{ t('checkout_payment_label') }}</label>
+    <div class="grid-2" style="margin-bottom:14px;">
+      <label style="border:1px solid var(--line); border-radius:3px; padding:10px; cursor:pointer; font-size:0.8rem; margin-bottom:0; display:flex; align-items:center; gap:8px;">
+        <input type="radio" name="payment_method" value="card" checked style="width:auto; margin:0;"> {{ t('checkout_card_option') }}
+      </label>
+      <label style="border:1px solid var(--line); border-radius:3px; padding:10px; cursor:pointer; font-size:0.8rem; margin-bottom:0; display:flex; align-items:center; gap:8px;">
+        <input type="radio" name="payment_method" value="paypal" style="width:auto; margin:0;"> {{ t('checkout_paypal_option') }}
+      </label>
+    </div>
+    {% if not stripe_enabled %}
+    <input type="text" name="card" placeholder="{{ t('checkout_card_placeholder') }}">
+    {% endif %}
+
+    <button type="submit" class="btn btn-oxide" style="width:100%; justify-content:center;">{{ t('checkout_submit') }}</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_product_tile.html" import product_tile %}
+{% block title %}KRONOCOLOR — Favoris{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <div class="eyebrow">FAVORIS</div>
+  <h2 style="font-size:1.7rem; margin-bottom:24px;">Vos produits favoris</h2>
+
+  {% if not products %}
+  <div class="card" style="opacity:0.6; font-size:0.85rem;">
+    Aucun favori pour le moment. <a href="{{ url_for('shop') }}" style="color:var(--gold); text-decoration:underline;">Parcourir la boutique</a>
+  </div>
+  {% else %}
+  <div class="tile-grid">
+    {% for p in products %}
+    {{ product_tile(p, favorites, compare) }}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

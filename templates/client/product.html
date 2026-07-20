@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% from "_product_tile.html" import product_tile %}
+{% block title %}KRONOCOLOR — {{ p.name }}{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <a href="{{ url_for('shop') }}" class="hero-text-link" style="display:inline-block; margin-bottom:28px;">← Retour à la boutique</a>
+
+  <div class="pdp-layout">
+    <div class="pdp-media" style="background:{% if p.image %}url('/static/{{ p.image }}') center/cover{% else %}{{ p.hex }}{% endif %};">
+      {% if not p.image %}
+      <span class="product-tile-monogram" style="font-size:6rem;">K</span>
+      {% endif %}
+    </div>
+    <div class="pdp-info">
+      <div class="product-tile-brand">{{ p.category }}</div>
+      <h1 style="font-family:Georgia, serif; font-style:italic; font-size:2.1rem; margin-top:8px;">{{ p.name }}</h1>
+      {% if p.rating_count %}
+      <a href="#avis" class="pdp-rating-link">★ {{ p.rating_avg }} <span style="opacity:0.6;">({{ p.rating_count }} avis)</span></a>
+      {% else %}
+      <a href="#avis" class="pdp-rating-link" style="opacity:0.55;">Aucun avis — soyez le premier</a>
+      {% endif %}
+      <p style="opacity:0.7; margin-top:12px; line-height:1.65; max-width:44ch;">{{ p.sub }}</p>
+      <div class="color-family-label">🎨 Couleur : {{ p.hex|color_family|capitalize }}</div>
+
+      <div style="font-size:1.3rem; margin-top:24px;">
+        {% if p.old_price and p.old_price > p.price %}
+        <span class="product-tile-old-price" style="font-size:1rem;">{{ p.old_price|money }}</span>
+        <span class="pill pill-oxide" style="margin-left:8px;">-{{ (((p.old_price - p.price) / p.old_price) * 100) | round | int }}%</span><br>
+        {% endif %}
+        {{ p.price|money }}<span style="opacity:0.5; font-size:0.9rem;"> / {{ p.unit }}</span>
+      </div>
+      <div style="margin-top:10px;">
+        {% if p.stock == 0 %}
+        <span class="pill pill-oxide">Épuisé</span>
+        {% elif p.stock < 80 %}
+        <span class="pill pill-oxide">Stock limité — {{ p.stock }} {{ p.unit }}</span>
+        {% else %}
+        <span class="pill pill-teal">En stock — {{ p.stock }} {{ p.unit }}</span>
+        {% endif %}
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:30px; flex-wrap:wrap;">
+        <form method="post" action="{{ url_for('cart_add', pid=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-gold" {{ 'disabled' if p.stock == 0 }}>{{ 'Épuisé' if p.stock == 0 else 'Ajouter au panier' }}</button>
+        </form>
+        <form method="post" action="{{ url_for('toggle_favorite', pid=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-outline">{{ '❤️ Retirer des favoris' if p.id in favorites else '🤍 Ajouter aux favoris' }}</button>
+        </form>
+      </div>
+
+      {% if can_sample %}
+      <form method="post" action="{{ url_for('add_product_sample', pid=p.id) }}" style="margin-top:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline" style="font-size:0.78rem;">
+          🧪 Commander un échantillon 50ml — {{ sample_price|money }}
+        </button>
+      </form>
+      <div style="font-size:0.72rem; opacity:0.5; margin-top:6px; max-width:40ch;">
+        Testez la teinte chez vous avant de commander un grand volume — réduit les retours.
+      </div>
+      {% endif %}
+
+      {% if coverage %}
+      <div class="card" id="quantity-calculator" style="margin-top:24px;"
+           data-m2-per-unit="{{ coverage.m2_per_unit }}" data-coats="{{ coverage.coats }}"
+           data-waste="{{ coverage.waste }}" data-unit-price="{{ p.price }}" data-unit-label="{{ p.unit }}"
+           data-currency-rate="{{ currency_rates[current_currency] }}"
+           data-currency-symbol="{{ currency_symbols[current_currency] }}"
+           data-currency-is-mad="{{ 'true' if current_currency == 'MAD' else 'false' }}">
+        <div class="eyebrow" style="margin-bottom:10px;">CALCULATEUR DE QUANTITÉ</div>
+        <label style="font-size:0.8rem;">Surface à couvrir (m²)</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="number" id="qty-calc-surface" min="0" step="0.5" placeholder="Ex : 25" style="flex:1;">
+          <span style="font-size:0.8rem; opacity:0.6; white-space:nowrap;">m²</span>
+        </div>
+        <div id="qty-calc-result" style="font-size:0.85rem; margin-top:12px; opacity:0.8;">
+          Indiquez la surface pour estimer la quantité nécessaire ({{ coverage.coats }} couche{{ 's' if coverage.coats != 1 }}).
+        </div>
+      </div>
+      <script>
+      (function () {
+        var box = document.getElementById('quantity-calculator');
+        if (!box) return;
+        var m2PerUnit = parseFloat(box.dataset.m2PerUnit);
+        var coats = parseFloat(box.dataset.coats);
+        var waste = parseFloat(box.dataset.waste);
+        var unitPrice = parseFloat(box.dataset.unitPrice);
+        var unitLabel = box.dataset.unitLabel;
+        var rate = parseFloat(box.dataset.currencyRate);
+        var symbol = box.dataset.currencySymbol;
+        var isMad = box.dataset.currencyIsMad === 'true';
+        var input = document.getElementById('qty-calc-surface');
+        var result = document.getElementById('qty-calc-result');
+        input.addEventListener('input', function () {
+          var surface = parseFloat(input.value);
+          if (!surface || surface <= 0) {
+            result.textContent = 'Indiquez la surface pour estimer la quantité nécessaire (' + coats + ' couche' + (coats !== 1 ? 's' : '') + ').';
+            return;
+          }
+          var units = Math.ceil((surface * coats * waste) / m2PerUnit);
+          var converted = units * unitPrice * rate;
+          var totalLabel = isMad ? Math.round(converted) + ' MAD' : converted.toFixed(2) + ' ' + symbol;
+          result.innerHTML = 'Il vous faut environ <strong>' + units + ' ' + unitLabel + '</strong> ' +
+            '(≈ ' + totalLabel + ') pour ' + surface + ' m² en ' + coats + ' couche' + (coats !== 1 ? 's' : '') + '.';
+        });
+      })();
+      </script>
+      {% endif %}
+    </div>
+  </div>
+
+  <div id="avis" class="home-section home-section-border">
+    <div class="eyebrow">AVIS CLIENTS</div>
+    <h2 style="font-size:1.5rem; margin-bottom:24px;">
+      {% if p.rating_count %}
+      {{ p.rating_avg }} ★ <span style="font-family:inherit; font-style:normal; font-size:0.85rem; opacity:0.55;">({{ p.rating_count }} avis)</span>
+      {% else %}
+      Soyez le premier à donner votre avis
+      {% endif %}
+    </h2>
+
+    <div class="reviews-layout">
+      <div class="reviews-list">
+        {% if not reviews %}
+        <p style="opacity:0.55; font-size:0.85rem;">Aucun avis pour ce produit pour le moment.</p>
+        {% endif %}
+        {% for r in reviews %}
+        <div class="review-card">
+          <div class="review-stars">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</div>
+          {% if r.photo %}
+          <img src="/static/{{ r.photo }}" alt="Photo du résultat par {{ r.author }}" class="review-photo">
+          {% endif %}
+          <div class="review-message">{{ r.message }}</div>
+          <div class="review-meta">{{ r.author }} · {{ r.created_at[:10] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="card review-form-card">
+        <div class="eyebrow" style="margin-bottom:14px;">DONNER VOTRE AVIS</div>
+        <form method="post" action="{{ url_for('add_review', pid=p.id) }}" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="star-picker">
+            <input type="radio" id="star5" name="rating" value="5" checked><label for="star5">★</label>
+            <input type="radio" id="star4" name="rating" value="4"><label for="star4">★</label>
+            <input type="radio" id="star3" name="rating" value="3"><label for="star3">★</label>
+            <input type="radio" id="star2" name="rating" value="2"><label for="star2">★</label>
+            <input type="radio" id="star1" name="rating" value="1"><label for="star1">★</label>
+          </div>
+          <textarea name="message" rows="4" placeholder="Partagez votre expérience avec ce produit…" required style="margin-top:14px;"></textarea>
+          <label style="font-size:0.75rem; opacity:0.6; margin-top:10px;">📷 Photo du résultat (facultatif)</label>
+          <input type="file" name="photo" accept="image/png,image/jpeg,image/gif,image/webp">
+          <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center; margin-top:6px;">Publier mon avis</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if related %}
+  <div class="home-section home-section-border">
+    <div class="home-section-head">
+      <div>
+        <div class="eyebrow">DANS LA MÊME CATÉGORIE</div>
+        <h2 style="font-size:1.5rem;">Vous aimerez aussi</h2>
+      </div>
+    </div>
+    <div class="tile-grid">
+      {% for rp in related %}
+      {{ product_tile(rp, favorites, compare) }}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Demandes grossiste{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <div class="eyebrow">ADMINISTRATION</div>
+  <h2 style="font-size:1.7rem; margin-bottom:24px;">Demandes grossiste</h2>
+
+  {% if not requests %}
+  <p style="font-size:0.85rem; opacity:0.5;">Aucune demande grossiste pour le moment.</p>
+  {% endif %}
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    {% for w in requests %}
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+        <span style="font-family:monospace; color:var(--gold);">{{ w.id }}</span>
+        <span style="opacity:0.6;">{{ w.created_at[:16].replace('T',' ') }}</span>
+      </div>
+      <div style="font-size:0.78rem; opacity:0.7; margin-top:4px;">
+        {{ w.company }} · {{ w.product_name }} · {{ w.qty }} unités · ~{{ w.est_total|round|int }} MAD
+      </div>
+      <div style="font-size:0.72rem; opacity:0.5; margin-top:4px;">Statut : {{ w.status }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

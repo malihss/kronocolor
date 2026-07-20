@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Produits{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <div class="eyebrow">ADMINISTRATION</div>
+  <h2 style="font-size:1.7rem; margin-bottom:24px;">Produits</h2>
+
+  <details style="margin-bottom:24px;">
+    <summary class="btn btn-gold" style="display:inline-flex; cursor:pointer;">+ Nouveau produit</summary>
+    <form method="post" action="{{ url_for('admin_products') }}" enctype="multipart/form-data" class="card" style="margin-top:12px; max-width:480px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="name" placeholder="Nom" required>
+      <input type="text" name="sub" placeholder="Sous-titre">
+      <select name="category">
+        {% for c in NAV_CATEGORIES %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+      <label>Couleur</label>
+      <input type="color" name="hex" value="#9b3a2b" style="height:40px;">
+      <input type="text" name="unit" placeholder="Unité (kg / L)" value="kg">
+      <input type="number" step="0.01" name="price" placeholder="Prix détail (MAD)">
+      <label>Ancien prix (promo, optionnel)</label>
+      <input type="number" step="0.01" name="old_price" placeholder="Laisser vide si pas de promo">
+      <input type="number" step="0.01" name="wholesale_price" placeholder="Prix grossiste (MAD)">
+      <input type="number" name="min_wholesale" placeholder="Minimum grossiste" value="10">
+      <input type="number" name="stock" placeholder="Stock">
+      <label>Photo (manuelle, optionnelle)</label>
+      <input type="file" name="image" accept="image/*">
+      <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center; margin-top:8px;">Enregistrer</button>
+    </form>
+  </details>
+
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    {% for p in products %}
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="swatch" style="width:32px; height:32px; background:{% if p.image %}url('/static/{{ p.image }}') center/cover{% else %}{{ p.hex }}{% endif %};"></div>
+        <div>
+          <div style="font-size:0.9rem;">{{ p.name }}</div>
+          <div style="font-size:0.72rem; opacity:0.5;">{{ p.price }} MAD/{{ p.unit }} · stock {{ p.stock }}</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <details>
+          <summary style="cursor:pointer; font-size:0.78rem; color:var(--gold);">Modifier</summary>
+          <form method="post" action="{{ url_for('admin_products') }}" enctype="multipart/form-data" class="card" style="margin-top:8px; width:280px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="id" value="{{ p.id }}">
+            <input type="hidden" name="existing_image" value="{{ p.image or '' }}">
+            <input type="text" name="name" value="{{ p.name }}" required>
+            <input type="text" name="sub" value="{{ p.sub }}">
+            <select name="category">
+              {% for c in NAV_CATEGORIES %}<option value="{{ c }}" {{ 'selected' if p.category==c }}>{{ c }}</option>{% endfor %}
+            </select>
+            <input type="color" name="hex" value="{{ p.hex }}" style="height:36px;">
+            <input type="text" name="unit" value="{{ p.unit }}">
+            <input type="number" step="0.01" name="price" value="{{ p.price }}">
+            <label>Ancien prix (promo, optionnel)</label>
+            <input type="number" step="0.01" name="old_price" value="{{ p.old_price or '' }}" placeholder="Laisser vide si pas de promo">
+            <input type="number" step="0.01" name="wholesale_price" value="{{ p.wholesale_price }}">
+            <input type="number" name="min_wholesale" value="{{ p.min_wholesale }}">
+            <input type="number" name="stock" value="{{ p.stock }}">
+            <input type="file" name="image" accept="image/*">
+            <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center;">Enregistrer</button>
+          </form>
+        </details>
+        <form method="post" action="{{ url_for('admin_product_delete', pid=p.id) }}" onsubmit="return confirm('Supprimer ce produit ?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" style="background:none; border:none; color:var(--oxide); cursor:pointer;">🗑</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

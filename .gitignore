@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+
+# Database
+*.db
+
+# Backups
+backups/
+
+# Environment variables
+.env
+
+# Uploaded files
+static/uploads/

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Commande confirmée{% endblock %}
+{% block content %}
+<div style="padding-top:60px; max-width:420px; margin:0 auto; text-align:center;">
+  <h2 style="font-size:1.6rem; margin-bottom:16px;">Commande confirmée</h2>
+  <div class="card" style="text-align:left;">
+    <p style="font-size:0.9rem;">Commande <strong style="color:var(--gold); font-family:monospace;">{{ order_id }}</strong> enregistrée.</p>
+    <p style="font-size:0.82rem; opacity:0.6; margin-top:4px;">
+      Paiement via {{ 'PayPal 🅿️' if payment_method == 'paypal' else 'Carte bancaire 💳' }}
+      {{ '— traité par Stripe (mode test).' if paid_via_stripe else '(simulé).' }}
+    </p>
+    <p style="font-size:0.85rem; opacity:0.7; margin-top:10px;">🚚 Livraison estimée le {{ estimate }} ({{ zone.label }}).</p>
+    <a href="{{ url_for('order_invoice_pdf', order_id=order_id) }}" class="btn btn-outline" style="width:100%; justify-content:center; margin-top:16px;">⬇ Télécharger la facture (PDF)</a>
+    <a href="{{ url_for('client_home') }}" class="btn btn-gold" style="width:100%; justify-content:center; margin-top:10px;">Retour à l'accueil</a>
+  </div>
+</div>
+{% endblock %}

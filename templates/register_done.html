@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Vérifiez votre email{% endblock %}
+{% block content %}
+<div class="login-wrap" style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
+  <div class="card" style="max-width:480px; margin:0 auto; text-align:center; padding:40px 32px;">
+    <div class="eyebrow">COMPTE CRÉÉ</div>
+    <h2 style="font-size:1.5rem; margin-bottom:14px;">Vérifiez votre adresse email</h2>
+    <p style="font-size:0.88rem; opacity:0.7; line-height:1.6; margin-bottom:24px;">
+      Un email de confirmation a été envoyé à <strong>{{ email }}</strong>. Cliquez sur le lien qu'il contient
+      pour activer votre compte.
+    </p>
+    <div class="card" style="background:var(--ink); border-style:dashed; margin-bottom:24px;">
+      <div style="font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; opacity:0.5; margin-bottom:8px;">
+        Démo — aucun serveur d'email n'est configuré
+      </div>
+      <a href="{{ verify_link }}" style="font-size:0.82rem; word-break:break-all; color:var(--gold);">{{ verify_link }}</a>
+    </div>
+    <a href="{{ verify_link }}" class="btn btn-gold" style="width:100%; justify-content:center;">✓ Vérifier mon email maintenant</a>
+    <p style="font-size:0.8rem; opacity:0.55; margin-top:18px;">
+      <a href="{{ url_for('login') }}" style="color:var(--gold); text-decoration:underline;">Retour à la connexion</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

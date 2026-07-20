@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ dir }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>{% block title %}KRONOCOLOR{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+{% set font_url = "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400;1,9..144,500&family=Public+Sans:wght@300;400;500;600&display=swap" %}
+<!-- Chargement des polices non bloquant : si Google Fonts est inaccessible (réseau
+     restreint, hors-ligne), la page s'affiche quand même immédiatement avec les
+     polices de repli système au lieu de rester bloquée en attente. -->
+<link rel="stylesheet" href="{{ font_url }}" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="{{ font_url }}"></noscript>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="{{ 'colorblind-mode' if colorblind_mode }}">
+
+<div class="site-header">
+<div class="announce-bar">
+  <span>Livraison offerte dès 800 MAD à Casablanca · Retours simplifiés</span>
+  <div class="lang-switcher">
+    {% for code in languages %}
+    <form method="post" action="{{ url_for('set_lang', code=code) }}" style="margin:0; display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="lang-option-pill {{ 'active' if lang == code }}">{{ language_labels[code] }}</button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
+
+{% if user %}
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand">KRONOCOLOR</div>
+
+    {% if user.role == "client" %}
+    <div class="nav-links">
+      <a href="{{ url_for('client_home') }}" class="{{ 'active' if request.endpoint == 'client_home' }}">{{ t('nav_home') }}</a>
+      <div class="nav-dropdown {{ 'active' if request.endpoint == 'shop' }}">
+        <span>{{ t('nav_shop') }} <em>▾</em></span>
+        <div class="nav-dropdown-menu">
+          <a href="{{ url_for('shop') }}" class="{{ 'active' if request.endpoint == 'shop' and not request.args.get('cat') }}">{{ t('nav_shop_all') }}</a>
+          {% for c in NAV_CATEGORIES %}
+          <a href="{{ url_for('shop', cat=c) }}" class="{{ 'active' if request.endpoint == 'shop' and request.args.get('cat') == c }}">{{ c }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <a href="{{ url_for('color_catalog') }}" class="{{ 'active' if request.endpoint == 'color_catalog' }}">{{ t('nav_colors') }}</a>
+      <a href="{{ url_for('my_orders') }}" class="{{ 'active' if request.endpoint == 'my_orders' }}">{{ t('nav_orders') }}</a>
+    </div>
+    {% endif %}
+
+    {% if user.role == "admin" %}
+    <div class="nav-links">
+      <a href="{{ url_for('admin_stats') }}" class="{{ 'active' if request.endpoint == 'admin_stats' }}">Statistiques</a>
+      <a href="{{ url_for('admin_products') }}" class="{{ 'active' if request.endpoint == 'admin_products' }}">Produits</a>
+      <a href="{{ url_for('admin_orders') }}" class="{{ 'active' if request.endpoint == 'admin_orders' }}">Commandes</a>
+      <a href="{{ url_for('admin_wholesale') }}" class="{{ 'active' if request.endpoint == 'admin_wholesale' }}">Grossiste</a>
+    </div>
+    {% endif %}
+
+    <div class="nav-right">
+      <span class="role-pill">{{ t('role_' + user.role) }}</span>
+
+      <div class="nav-icons">
+        {% if user.role == "client" %}
+        <div class="nav-search {{ 'open' if request.args.get('q') }}">
+          <button type="button" class="fav-icon nav-search-toggle" onclick="toggleSearch(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
+          <form method="get" action="{{ url_for('shop') }}" class="nav-search-form">
+            <input type="text" name="q" placeholder="Rechercher…" value="{{ request.args.get('q', '') }}">
+          </form>
+        </div>
+        <div class="fav-wrap">
+          <a href="{{ url_for('favorites_view') }}" class="fav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.9a5.5 5.5 0 0 0-7.8 0L12 5.9l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.3 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+            {% if session.get('favorites') %}
+              <span class="fav-badge">{{ session.get('favorites')|length }}</span>
+            {% endif %}
+          </a>
+        </div>
+        <div class="cart-wrap">
+          <a href="{{ url_for('cart_view') }}" class="cart-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            {% if session.get('cart') or session.get('cart_samples') %}
+              <span class="cart-badge">{{ (session.get('cart').values() | sum) + (session.get('cart_samples', [])|length) }}</span>
+            {% endif %}
+          </a>
+        </div>
+        {% endif %}
+
+        <a href="{{ url_for('toggle_colorblind_mode') }}" class="fav-icon colorblind-toggle {{ 'active' if colorblind_mode }}"
+           title="Mode daltonien : affiche le nom de chaque couleur et un motif sur les nuances">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </a>
+
+        <div class="nav-dropdown account-dropdown">
+          <span class="fav-icon currency-toggle" style="position:relative;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9 8.5h3.5a1.75 1.75 0 1 1 0 3.5H9m0 0h3.5a1.75 1.75 0 1 1 0 3.5H9m2-9v9.5"></path></svg>
+            <span class="cart-badge currency-badge">{{ current_currency[:1] }}</span>
+          </span>
+          <div class="nav-dropdown-menu account-menu">
+            <div class="account-menu-name" style="opacity:0.5; font-size:0.68rem; letter-spacing:0.08em;">DEVISE</div>
+            {% for code in currency_rates %}
+            <form method="post" action="{{ url_for('set_currency', code=code) }}" style="margin:0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="currency-option {{ 'active' if current_currency == code }}">{{ code }}</button>
+            </form>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="nav-dropdown account-dropdown">
+          <span class="fav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </span>
+          <div class="nav-dropdown-menu account-menu">
+            <div class="account-menu-name">{{ user.name }}</div>
+            <a href="{{ url_for('logout') }}">{{ t('nav_logout') }}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+<script>
+function toggleSearch(btn) {
+  const wrap = btn.closest('.nav-search');
+  wrap.classList.toggle('open');
+  if (wrap.classList.contains('open')) wrap.querySelector('input').focus();
+}
+</script>
+<script>
+document.querySelectorAll('.nav-dropdown > span').forEach(function (el) {
+  el.addEventListener('click', function () {
+    const dd = el.closest('.nav-dropdown');
+    const wasOpen = dd.classList.contains('open');
+    document.querySelectorAll('.nav-dropdown.open').forEach(o => o.classList.remove('open'));
+    if (!wasOpen) dd.classList.add('open');
+  });
+});
+document.addEventListener('click', function (e) {
+  document.querySelectorAll('.nav-dropdown.open').forEach(function (dd) {
+    if (!dd.contains(e.target)) dd.classList.remove('open');
+  });
+});
+</script>
+{% endif %}
+</div>
+
+<div class="flash-wrap">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+{% if user %}
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">KRONOCOLOR</div>
+      <div class="footer-line">📞 {{ CONTACT.phone }}</div>
+      <div class="footer-line">✉️ {{ CONTACT.email }}</div>
+      <div class="footer-line">📍 {{ CONTACT.address }}</div>
+      <a href="{{ CONTACT.maps_url }}" target="_blank" class="maps-link">Voir sur Google Maps</a>
+    </div>
+    <div>
+      <div class="footer-title">{{ t('footer_delivery_title') }}</div>
+      <div class="footer-line">{{ t('footer_delivery_line1') }}</div>
+      <div class="footer-line">{{ t('footer_delivery_line2') }}</div>
+    </div>
+    <div>
+      <div class="footer-title">{{ t('footer_follow_title') }}</div>
+      <div class="social-row">
+        <a href="#">Instagram</a><a href="#">Facebook</a><a href="#">YouTube</a><a href="#">LinkedIn</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-copy">© 2026 KRONOCOLOR SARL — RC 457639, Casablanca</div>
+</footer>
+{% endif %}
+
+{% if user and user.role == "client" %}
+<div id="ai-widget">
+  <div id="ai-panel" class="ai-panel hidden">
+    <div class="chat-header">
+      <span>Assistant IA</span>
+      <button onclick="toggleAiPanel()">✕</button>
+    </div>
+    <div class="ai-panel-links">
+      <a href="{{ url_for('quiz') }}" class="ai-panel-link">
+        <span class="ai-panel-icon">📝</span>
+        <span>
+          <span class="ai-panel-title">Quiz conseil</span>
+          <span class="ai-panel-sub">Trouvez la teinte adaptée en 3 questions</span>
+        </span>
+      </a>
+      <a href="{{ url_for('diagnostic') }}" class="ai-panel-link">
+        <span class="ai-panel-icon">🧪</span>
+        <span>
+          <span class="ai-panel-title">Diagnostic IA</span>
+          <span class="ai-panel-sub">Analyse technique de votre mélange</span>
+        </span>
+      </a>
+    </div>
+  </div>
+  <button id="ai-toggle" onclick="toggleAiPanel()">
+    <span class="chat-dot"></span><span class="chat-toggle-label">Assistant IA</span>
+  </button>
+</div>
+
+<div id="chat-widget">
+  <div id="chat-panel" class="chat-panel hidden">
+    <div class="chat-header">
+      <span>Chatbot KRONOCOLOR</span>
+      <button onclick="toggleChat()">✕</button>
+    </div>
+    <div id="chat-messages" class="chat-messages">
+      <div class="msg assistant">Bonjour 👋 Une question sur un pigment, une peinture, une commande ? Je suis là.</div>
+    </div>
+    <div class="chat-quick">
+      <button onclick="sendChat('Livraison ?')">Livraison ?</button>
+      <button onclick="sendChat('Paiement')">Paiement</button>
+      <button onclick="sendChat('Grandes quantités')">Grandes quantités</button>
+    </div>
+    <div class="chat-input-row">
+      <input id="chat-input" type="text" placeholder="Écrire un message…" onkeydown="if(event.key==='Enter')sendChat()">
+      <button onclick="sendChat()">➤</button>
+    </div>
+  </div>
+  <button id="chat-toggle" onclick="toggleChat()">
+    <span class="chat-dot"></span><span class="chat-toggle-label">Chatbot</span>
+  </button>
+</div>
+
+<a id="whatsapp-widget"
+   href="https://wa.me/{{ CONTACT.whatsapp }}?text=Bonjour%2C%20j%27ai%20une%20question%20sur%20vos%20produits%20KRONOCOLOR."
+   target="_blank" rel="noopener" aria-label="Contacter sur WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.29-.15-1.7-.84-1.97-.93-.26-.1-.46-.15-.65.15-.2.29-.75.93-.92 1.13-.17.19-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.43-.86-.76-1.43-1.7-1.6-1.99-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.36-.02-.51-.07-.15-.65-1.57-.9-2.15-.24-.57-.48-.5-.65-.5-.17-.01-.36-.01-.56-.01-.19 0-.51.07-.78.36-.26.29-1.02 1-1.02 2.43 0 1.43 1.05 2.82 1.2 3.01.15.19 2.06 3.15 5 4.42.7.3 1.24.48 1.67.61.7.22 1.34.19 1.84.12.56-.08 1.7-.7 1.94-1.37.24-.68.24-1.25.17-1.37-.07-.12-.26-.19-.55-.34z"/><path d="M12.02 2C6.5 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.07L2 22l5.05-1.33A9.94 9.94 0 0 0 12.02 22C17.55 22 22 17.52 22 12S17.55 2 12.02 2zm0 18.15c-1.65 0-3.19-.46-4.5-1.26l-.32-.19-3 .79.8-2.93-.21-.3A8.13 8.13 0 0 1 3.87 12c0-4.5 3.66-8.15 8.15-8.15 4.5 0 8.15 3.66 8.15 8.15 0 4.5-3.65 8.15-8.15 8.15z"/></svg>
+</a>
+
+<script>
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+function toggleAiPanel() {
+  document.getElementById('ai-panel').classList.toggle('hidden');
+}
+function toggleChat() {
+  document.getElementById('chat-panel').classList.toggle('hidden');
+}
+async function sendChat(preset) {
+  const input = document.getElementById('chat-input');
+  const text = preset || input.value.trim();
+  if (!text) return;
+  const box = document.getElementById('chat-messages');
+  box.innerHTML += `<div class="msg user">${text}</div>`;
+  input.value = '';
+  box.scrollTop = box.scrollHeight;
+  const loadingEl = document.createElement('div');
+  loadingEl.className = 'msg assistant loading';
+  loadingEl.textContent = '…';
+  box.appendChild(loadingEl);
+  try {
+    const res = await fetch('/api/chatbot', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken()},
+      body: JSON.stringify({message: text})
+    });
+    const data = await res.json();
+    loadingEl.remove();
+    box.innerHTML += `<div class="msg assistant">${data.reply}</div>`;
+  } catch (e) {
+    loadingEl.remove();
+    box.innerHTML += `<div class="msg assistant">Je suis indisponible pour le moment.</div>`;
+  }
+  box.scrollTop = box.scrollHeight;
+}
+</script>
+{% endif %}
+
+{% if user and request.endpoint == 'client_home' %}
+<div id="welcome-toast" class="toast">
+  <span class="toast-check">✓</span>
+  <span>Bon retour, {{ user.name }} !</span>
+</div>
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+  const toast = document.getElementById('welcome-toast');
+  requestAnimationFrame(function () { toast.classList.add('show'); });
+  setTimeout(function () { toast.classList.remove('show'); }, 4000);
+});
+</script>
+{% endif %}
+
+</body>
+</html>

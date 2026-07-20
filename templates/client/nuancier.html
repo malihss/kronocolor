@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Nuancier{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <div class="eyebrow">NUANCIER</div>
+  <h2 style="font-size:1.9rem; margin-bottom:10px;">Toutes nos teintes</h2>
+  <p style="opacity:0.65; font-size:0.9rem; max-width:60ch; margin-bottom:12px; line-height:1.6;">Chaque couleur est développée pour un usage précis — climat, surface, exposition. Cliquez sur une teinte pour voir le produit complet.</p>
+  <a href="{{ url_for('diagnostic') }}" class="hero-text-link" style="font-size:0.82rem; display:inline-block; margin-bottom:24px;">Pas la bonne teinte ? Essayez le mélange →</a>
+
+  <div class="shop-layout-filters">
+    <aside class="shop-filters">
+      <div class="shop-filter-group">
+        <div class="shop-filter-title">COULEUR</div>
+        <div class="shop-color-swatches">
+          <div class="shop-color-dot-wrap">
+            <a href="{{ url_for('color_catalog') }}" class="shop-color-dot shop-color-dot-all {{ 'active' if not color }}" title="Toutes les couleurs">×</a>
+            <div class="color-family-label">Toutes les couleurs</div>
+          </div>
+          {% for fam in color_families %}
+          <div class="shop-color-dot-wrap">
+            <a href="{{ url_for('color_catalog', color=fam) }}" class="shop-color-dot {{ 'active' if color == fam }}" style="background:{{ color_swatches[fam] }};" title="{{ fam|capitalize }}"></a>
+            <div class="color-family-label">{{ fam|capitalize }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+
+    <div class="shop-main">
+      {% if not products %}
+      <p style="font-size:0.85rem; opacity:0.5;">Aucune teinte ne correspond à ce filtre.</p>
+      {% endif %}
+      {% for cat in categories %}
+      {% set cat_products = products|selectattr('category', 'equalto', cat)|list %}
+      {% if cat_products %}
+      <section class="category-block">
+        <div class="category-head">
+          <h3>{{ cat }}</h3>
+        </div>
+        <div class="color-grid">
+          {% for p in cat_products %}
+          <a href="{{ url_for('product_detail', pid=p.id) }}" class="color-swatch-card">
+            <div class="color-swatch-block" style="background:{% if p.image %}url('/static/{{ p.image }}') center/cover{% else %}{{ p.hex }}{% endif %};">
+              {% if not p.image %}
+              <span class="product-tile-monogram">K</span>
+              {% endif %}
+            </div>
+            <div class="color-swatch-meta">
+              <div class="color-swatch-name">{{ p.name }}</div>
+              <div class="color-swatch-hex">{{ p.hex }}</div>
+              <div class="color-family-label">🎨 {{ p.hex|color_family|capitalize }}</div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Statistiques{% endblock %}
+{% block content %}
+<div style="padding-top:30px;">
+  <div class="eyebrow">ADMINISTRATION</div>
+  <h2 style="font-size:1.7rem; margin-bottom:24px;">Statistiques</h2>
+
+  <div class="grid-3" style="margin-bottom:30px;">
+    <div class="stat-box">
+      <div style="font-size:0.75rem; opacity:0.6; margin-bottom:4px;">💰 Chiffre d'affaires</div>
+      <div class="stat-value">{{ revenue|round|int }} MAD</div>
+    </div>
+    <div class="stat-box">
+      <div style="font-size:0.75rem; opacity:0.6; margin-bottom:4px;">👥 Clients uniques</div>
+      <div class="stat-value">{{ unique_clients }}</div>
+    </div>
+    <div class="stat-box">
+      <div style="font-size:0.75rem; opacity:0.6; margin-bottom:4px;">📦 Commandes / demandes</div>
+      <div class="stat-value">{{ total_orders }}</div>
+    </div>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <div style="font-size:0.9rem;">📈 Ventes des 14 derniers jours (MAD)</div>
+  </div>
+  <div class="chart-columns" style="margin-bottom:36px;">
+    {% for d in sales_over_time %}
+    <div class="chart-col" title="{{ d.date }} : {{ d.amount|round|int }} MAD">
+      <div class="chart-bar-wrap"><div class="chart-bar" style="height:{{ d.pct }}%;"></div></div>
+      <div class="chart-col-label">{{ d.label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <div style="font-size:0.9rem;">🏆 Meilleures ventes (quantité)</div>
+    <a href="{{ url_for('admin_orders_export_csv') }}" class="btn btn-outline" style="font-size:0.75rem; padding:6px 14px;">⬇ Exporter les commandes (CSV)</a>
+  </div>
+  {% if not best_sellers %}
+  <p style="font-size:0.85rem; opacity:0.5;">Pas encore de données de vente.</p>
+  {% endif %}
+  {% for name, qty in best_sellers %}
+  <div style="margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; font-size:0.78rem; opacity:0.7; margin-bottom:4px;">
+      <span>{{ name }}</span><span>{{ qty }}</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" style="width:{{ (qty / max_qty * 100)|round|int }}%;"></div></div>
+  </div>
+  {% endfor %}
+
+  <div style="font-size:0.9rem; margin:36px 0 14px;">🚨 Stock bas (seuil : {{ low_stock_threshold }} unités)</div>
+  {% if not low_stock %}
+  <p style="font-size:0.85rem; opacity:0.5;">Aucun produit sous le seuil critique actuellement.</p>
+  {% else %}
+  {% for p in low_stock %}
+  <div class="alert-item">
+    <span>{{ p.name }}</span>
+    <span class="alert-badge">{{ p.stock }} restant{{ 's' if p.stock != 1 else '' }}</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if recent_alerts %}
+  <div style="font-size:0.78rem; opacity:0.5; margin:20px 0 8px;">Historique des alertes envoyées (email simulé) :</div>
+  {% for a in recent_alerts %}
+  <div style="font-size:0.75rem; opacity:0.6; margin-bottom:4px;">
+    {{ a.created_at[:16] }} — {{ a.product_name }} (stock : {{ a.stock_at_alert }})
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin:36px 0 14px;">
+    <div style="font-size:0.9rem;">🤖 Machine Learning — recommandations finition/liant</div>
+    <form method="post" action="{{ url_for('admin_ml_retrain') }}" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline" style="font-size:0.75rem; padding:6px 14px;">↻ Ré-entraîner maintenant</button>
+    </form>
+  </div>
+  <p style="font-size:0.8rem; opacity:0.7; margin-bottom:8px;">
+    Le modèle démarre sur un jeu de règles techniques codées à la main. Chaque fois qu'un client
+    passe par le quiz conseil ou le diagnostic IA (indiquant surface + climat) puis achète une
+    peinture, la commande réelle est ajoutée au jeu d'entraînement et le modèle est
+    ré-entraîné automatiquement — les recommandations s'affinent avec l'usage réel.
+  </p>
+  <div class="stat-box" style="max-width:320px; margin-bottom:16px;">
+    <div style="font-size:0.75rem; opacity:0.6; margin-bottom:4px;">📊 Commandes réelles apprises</div>
+    <div class="stat-value">{{ ml_real_samples_in_model }}</div>
+  </div>
+  {% if not ml_recent_samples %}
+  <p style="font-size:0.85rem; opacity:0.5;">Aucune commande réelle liée à un quiz/diagnostic pour l'instant — le modèle utilise uniquement les règles de base.</p>
+  {% else %}
+  <div style="font-size:0.78rem; opacity:0.5; margin-bottom:8px;">Derniers échantillons réels capturés :</div>
+  {% for s in ml_recent_samples %}
+  <div style="font-size:0.75rem; opacity:0.65; margin-bottom:4px;">
+    {{ s.created_at[:16] }} — {{ s.surface }} / {{ s.climate }} / {{ s.lightness_bucket }} → {{ s.finish }} · {{ s.binder }} (commande {{ s.order_id }})
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin:36px 0 14px;">
+    <div style="font-size:0.9rem;">🗄️ Sauvegarde de la base de données</div>
+    <form method="post" action="{{ url_for('admin_backup_now') }}" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline" style="font-size:0.75rem; padding:6px 14px;">💾 Sauvegarder maintenant</button>
+    </form>
+  </div>
+  <p style="font-size:0.8rem; opacity:0.7; margin-bottom:8px;">
+    Une sauvegarde de kronocolor.db est déclenchée automatiquement (au maximum une fois par
+    24h) et conservée dans le dossier <code>backups/</code> — les 10 plus récentes sont gardées.
+  </p>
+  {% if not backups %}
+  <p style="font-size:0.85rem; opacity:0.5;">Aucune sauvegarde pour l'instant.</p>
+  {% else %}
+  {% for b in backups[:5] %}
+  <div style="font-size:0.75rem; opacity:0.65; margin-bottom:4px; display:flex; justify-content:space-between; max-width:420px;">
+    <span>{{ b.filename }}</span><span>{{ b.size_kb }} Ko</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

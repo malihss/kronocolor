@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}KRONOCOLOR — Connexion{% endblock %}
+{% block content %}
+<div class="split bleed">
+  <div class="split-pane">
+    <div class="login-box">
+      <div style="margin-bottom: 30px;">
+        <div class="brand" style="font-size:1.5rem;">KRONOCOLOR</div>
+        <div class="eyebrow" style="margin-top:6px;">{{ t('login_eyebrow') }}</div>
+      </div>
+
+      <form method="post" id="login-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="role-tabs" id="role-grid">
+          {% for r in roles %}
+          <div class="role-tab {{ 'selected' if loop.first }}" data-role="{{ r.id }}" onclick="selectRole('{{ r.id }}')">
+            {{ t('role_' + r.id) }}
+          </div>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="role" id="role-input" value="{{ roles[0].id }}">
+
+        <h2 style="font-size:1.6rem; margin-bottom:4px;">{{ t('login_title') }}</h2>
+        <p style="font-size:0.85rem; opacity:0.6; margin-bottom:20px;">{{ t('login_sub') }}</p>
+
+        <input type="email" name="email" placeholder="{{ t('email_placeholder') }}" required>
+        <input type="password" name="password" placeholder="{{ t('password_placeholder') }}" required>
+        <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center;">{{ t('login_submit') }}</button>
+      </form>
+
+      <p style="font-size:0.82rem; opacity:0.65; margin-top:18px; text-align:center;">
+        {{ t('login_no_account') }} <a href="{{ url_for('register') }}" style="color:var(--gold); text-decoration:underline;">{{ t('login_create_account') }}</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="split-image">
+    <div class="split-image-photo" style="background-image:url('{{ url_for('static', filename='images/hero-peinture.jpg') }}');"></div>
+  </div>
+</div>
+
+<script>
+function selectRole(role) {
+  document.querySelectorAll('.role-tab').forEach(el => el.classList.remove('selected'));
+  document.querySelector(`.role-tab[data-role="${role}"]`).classList.add('selected');
+  document.getElementById('role-input').value = role;
+}
+</script>
+{% endblock %}
