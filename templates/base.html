@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="{{ font_url }}" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="{{ font_url }}"></noscript>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script>document.documentElement.classList.add('js-reveal');</script>
 </head>
 <body class="{{ 'colorblind-mode' if colorblind_mode }}">
 
@@ -148,6 +149,17 @@ document.addEventListener('click', function (e) {
   });
 });
 </script>
+<script>
+(function () {
+  var header = document.querySelector('.site-header');
+  if (!header) return;
+  function onScroll() {
+    header.classList.toggle('is-scrolled', window.scrollY > 8);
+  }
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+})();
+</script>
 {% endif %}
 </div>
 
@@ -166,26 +178,66 @@ document.addEventListener('click', function (e) {
 {% if user %}
 <footer class="footer">
   <div class="footer-inner">
-    <div>
+    <div class="footer-col footer-col-brand">
       <div class="footer-brand">KRONOCOLOR</div>
-      <div class="footer-line">📞 {{ CONTACT.phone }}</div>
-      <div class="footer-line">✉️ {{ CONTACT.email }}</div>
-      <div class="footer-line">📍 {{ CONTACT.address }}</div>
+      <p class="footer-tagline">{{ t('footer_tagline') }}</p>
+      <div class="footer-contact">
+        <a href="tel:{{ CONTACT.phone|replace(' ', '') }}" class="footer-contact-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L7.9 9.9a16 16 0 0 0 6.2 6.2l1.4-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2Z"></path></svg>
+          <span>{{ CONTACT.phone }}</span>
+        </a>
+        <a href="mailto:{{ CONTACT.email }}" class="footer-contact-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"></rect><path d="m3.5 6 8.5 6.5L20.5 6"></path></svg>
+          <span>{{ CONTACT.email }}</span>
+        </a>
+        <a href="{{ CONTACT.maps_url }}" target="_blank" class="footer-contact-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.7 7-12a7 7 0 1 0-14 0c0 5.3 7 12 7 12Z"></path><circle cx="12" cy="9" r="2.5"></circle></svg>
+          <span>{{ CONTACT.address }}</span>
+        </a>
+      </div>
       <a href="{{ CONTACT.maps_url }}" target="_blank" class="maps-link">Voir sur Google Maps</a>
     </div>
-    <div>
+
+    {% if user.role == "client" %}
+    <div class="footer-col">
+      <div class="footer-title">{{ t('footer_shop_title') }}</div>
+      <a class="footer-link" href="{{ url_for('client_home') }}">{{ t('nav_home') }}</a>
+      <a class="footer-link" href="{{ url_for('shop') }}">{{ t('nav_shop') }}</a>
+      <a class="footer-link" href="{{ url_for('color_catalog') }}">{{ t('nav_colors') }}</a>
+      <a class="footer-link" href="{{ url_for('my_orders') }}">{{ t('nav_orders') }}</a>
+    </div>
+    {% endif %}
+
+    <div class="footer-col">
       <div class="footer-title">{{ t('footer_delivery_title') }}</div>
       <div class="footer-line">{{ t('footer_delivery_line1') }}</div>
       <div class="footer-line">{{ t('footer_delivery_line2') }}</div>
     </div>
-    <div>
+
+    <div class="footer-col">
       <div class="footer-title">{{ t('footer_follow_title') }}</div>
       <div class="social-row">
-        <a href="#">Instagram</a><a href="#">Facebook</a><a href="#">YouTube</a><a href="#">LinkedIn</a>
+        <a href="#" class="social-icon" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"></circle></svg>
+        </a>
+        <a href="#" class="social-icon" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8h-2a2 2 0 0 0-2 2v3H9v3h2v6h3v-6h1.8l.7-3H14v-2a1 1 0 0 1 1-1h2V8Z"></path></svg>
+        </a>
+        <a href="#" class="social-icon" aria-label="YouTube">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="3"></rect><path d="M10.5 9.5v5l4.5-2.5-4.5-2.5Z" fill="currentColor" stroke="none"></path></svg>
+        </a>
+        <a href="#" class="social-icon" aria-label="LinkedIn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="7" cy="7.3" r="0.6" fill="currentColor" stroke="none"></circle><line x1="7" y1="10.5" x2="7" y2="17"></line><path d="M11 17v-4.2a2.3 2.3 0 0 1 4.6 0V17"></path><line x1="11" y1="10.5" x2="11" y2="17"></line></svg>
+        </a>
       </div>
     </div>
   </div>
-  <div class="footer-copy">© 2026 KRONOCOLOR SARL — RC 457639, Casablanca</div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 KRONOCOLOR SARL — RC 457639, Casablanca</div>
+    <button type="button" class="footer-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+      {{ t('footer_back_to_top') }} <span aria-hidden="true">↑</span>
+    </button>
+  </div>
 </footer>
 {% endif %}
 
@@ -300,6 +352,7 @@ window.addEventListener('DOMContentLoaded', function () {
   setTimeout(function () { toast.classList.remove('show'); }, 4000);
 });
 </script>
+<script defer src="{{ url_for('static', filename='hero.js') }}"></script>
 {% endif %}
 
 </body>

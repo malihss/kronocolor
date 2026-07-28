@@ -34,6 +34,13 @@ TRANSLATIONS = {
         "ar": "🚚 تتبع الطلب من حسابك",
     },
     "footer_follow_title": {"fr": "SUIVEZ-NOUS", "en": "FOLLOW US", "ar": "تابعنا"},
+    "footer_tagline": {
+        "fr": "Pigments et peintures artisanales, pensés pour durer.",
+        "en": "Artisan pigments and paints, made to last.",
+        "ar": "أصباغ وطلاءات حرفية، مصممة لتدوم.",
+    },
+    "footer_shop_title": {"fr": "NAVIGATION", "en": "QUICK LINKS", "ar": "روابط سريعة"},
+    "footer_back_to_top": {"fr": "Haut de page", "en": "Back to top", "ar": "العودة للأعلى"},
 
     "login_eyebrow": {"fr": "SE CONNECTER EN TANT QUE", "en": "LOG IN AS", "ar": "تسجيل الدخول كـ"},
     "login_title": {"fr": "Bon retour", "en": "Welcome back", "ar": "مرحبًا بعودتك"},
