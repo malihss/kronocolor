@@ -24,4 +24,6 @@ EXPOSE 5000
 #   STRIPE_SECRET_KEY  optional — without it, checkout falls back to the simulated payment
 #                      flow. Use a Stripe *test* secret key (sk_test_...) for a real but
 #                      no-money-moves Stripe Checkout integration.
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "3", "app:app"]
+#   PORT               optional — defaults to 5000. Some PaaS providers (Render, etc.) inject
+#                      their own PORT at runtime and expect the process to bind to it.
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 3 app:app"]
